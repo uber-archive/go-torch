@@ -32,7 +32,7 @@ import (
 	"github.com/Sirupsen/logrus"
 )
 
-var errNoPerlScript = errors.New("Cannot find flamegraph.pl script in the PATH or current " +
+var errNoPerlScript = errors.New("Cannot find flamegraph script in the PATH or current " +
 	"directory. You can download the script at https://github.com/brendangregg/FlameGraph. " +
 	"Alternatively, you can run go-torch with the --raw flag.")
 
@@ -83,16 +83,17 @@ func (v *defaultVisualizer) GenerateFlameGraph(graphInput, outputFilePath string
 // runPerlScript checks whether the flamegraph script exists in the PATH or current directory and
 // then executes it with the graphInput.
 func (e *defaultExecutor) runPerlScript(graphInput string) ([]byte, error) {
-	perlScript, err := exec.LookPath("flamegraph.pl")
+	cwd, err := os.Getwd()
 	if err != nil {
-		cwd, err := os.Getwd()
-		if err != nil {
-			return nil, err
-		}
-		perlScript, err = exec.LookPath(cwd + "/flamegraph.pl")
-		if err != nil {
-			return nil, errNoPerlScript
-		}
+		return nil, err
+	}
+	possibilities := []string{"flamegraph.pl", cwd + "/flamegraph.pl", "flame-graph-gen"}
+	perlScript := ""
+	for _, path := range possibilities {
+		perlScript, err = exec.LookPath(path)
+	}
+	if err != nil {
+		return nil, errNoPerlScript
 	}
 	cmd := exec.Command(perlScript, os.Stdin.Name())
 	cmd.Stdin = strings.NewReader(graphInput)
