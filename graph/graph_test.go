@@ -88,6 +88,7 @@ func TestDFS(t *testing.T) {
 		nodeToOutEdges: nodeToOutEdges,
 		nameToNodes:    g.Nodes.Lookup,
 		buffer:         buffer,
+		colorMap:       make(map[string]color),
 	})
 
 	correctOutput := "N1;N2;N3 3\nN1;N3 2\nN1;N4;N3 8\n"
@@ -120,6 +121,7 @@ func TestDFSAlmostEmptyGraph(t *testing.T) {
 		nodeToOutEdges: nodeToOutEdges,
 		nameToNodes:    g.Nodes.Lookup,
 		buffer:         buffer,
+		colorMap:       make(map[string]color),
 	})
 
 	correctOutput := ""
@@ -163,6 +165,7 @@ func TestDFSMultipleRootsLeaves(t *testing.T) {
 		nodeToOutEdges: nodeToOutEdges,
 		nameToNodes:    g.Nodes.Lookup,
 		buffer:         buffer,
+		colorMap:       make(map[string]color),
 	})
 	searcherWithTestStringer.dfs(searchArgs{
 		root:           "N4",
@@ -170,9 +173,56 @@ func TestDFSMultipleRootsLeaves(t *testing.T) {
 		nodeToOutEdges: nodeToOutEdges,
 		nameToNodes:    g.Nodes.Lookup,
 		buffer:         buffer,
+		colorMap:       make(map[string]color),
 	})
 
 	correctOutput := "N1;N2 3\nN1;N3 2\nN4;N5 8\nN4;N6;N5 7\n"
+	actualOutput := buffer.String()
+
+	assert.Equal(t, correctOutput, actualOutput)
+	mockPathStringer.AssertExpectations(t)
+}
+
+func TestDFSCyclicGraph(t *testing.T) {
+	g := testGraphWithCycles()
+	eMap := g.Edges.SrcToDsts
+
+	nodeToOutEdges := map[string][]*ggv.Edge{
+		"N1": {eMap["N1"]["N2"], eMap["N1"]["N4"]},
+		"N2": {eMap["N2"]["N3"], eMap["N2"]["N4"]},
+		"N3": {eMap["N3"]["N4"], eMap["N3"]["N5"]},
+		"N5": {eMap["N5"]["N2"]},
+	}
+
+	buffer := new(bytes.Buffer)
+	mockPathStringer := new(mockPathStringer)
+	anythingType := mock.AnythingOfType("map[string]*gographviz.Node")
+	pathOne := []ggv.Edge{*eMap["N1"]["N2"], *eMap["N2"]["N3"], *eMap["N3"]["N4"]}
+	pathTwo := []ggv.Edge{*eMap["N1"]["N4"]}
+	pathThree := []ggv.Edge{*eMap["N1"]["N2"], *eMap["N2"]["N4"]}
+
+	cycleOne := []ggv.Edge{*eMap["N1"]["N2"], *eMap["N2"]["N3"], *eMap["N3"]["N5"],
+		*eMap["N5"]["N2"]}
+
+	mockPathStringer.On("pathAsString", pathOne, anythingType).Return("N1;N2;N3;N4 4\n").Once()
+	mockPathStringer.On("pathAsString", pathTwo, anythingType).Return("N1;N4 2\n").Once()
+	mockPathStringer.On("pathAsString", pathThree, anythingType).Return("N2;N4 2\n").Once()
+
+	mockPathStringer.On("pathAsString", cycleOne, anythingType).Return("should not include\n").Once()
+
+	searcherWithTestStringer := &defaultSearcher{
+		pathStringer: mockPathStringer,
+	}
+	searcherWithTestStringer.dfs(searchArgs{
+		root:           "N1",
+		path:           []ggv.Edge{},
+		nodeToOutEdges: nodeToOutEdges,
+		nameToNodes:    g.Nodes.Lookup,
+		buffer:         buffer,
+		colorMap:       make(map[string]color),
+	})
+
+	correctOutput := "N1;N2;N3;N4 4\nN2;N4 2\nN1;N4 2\n"
 	actualOutput := buffer.String()
 
 	assert.Equal(t, correctOutput, actualOutput)
@@ -315,6 +365,47 @@ func testMultiRootGraph() *ggv.Graph {
 	g.AddEdge("N4", "N5", true, nil)
 	g.AddEdge("N4", "N6", true, nil)
 	g.AddEdge("N6", "N5", true, nil)
+	return g
+}
+
+// The returned graph, represented in ascii:
+//    +----+     +----+
+// +> | N4 | <-- | N1 |
+// |  +----+     +----+
+// |    ^          |
+// |    |          |
+// |    |          v
+// |    |        +----+
+// |    +------- | N2 | <+
+// |             +----+  |
+// |               |     |
+// |               |     |
+// |               v     |
+// |             +----+  |
+// +------------ | N3 |  |
+//               +----+  |
+//                 |     |
+//                 |     |
+//                 v     |
+//               +----+  |
+//               | N5 | -+
+//               +----+
+func testGraphWithCycles() *ggv.Graph {
+	g := ggv.NewGraph()
+	g.SetName("G")
+	g.SetDir(true)
+	g.AddNode("G", "N1", nil)
+	g.AddNode("G", "N2", nil)
+	g.AddNode("G", "N3", nil)
+	g.AddNode("G", "N4", nil)
+	g.AddNode("G", "N5", nil)
+	g.AddEdge("N1", "N2", true, nil)
+	g.AddEdge("N1", "N4", true, nil)
+	g.AddEdge("N2", "N3", true, nil)
+	g.AddEdge("N2", "N4", true, nil)
+	g.AddEdge("N3", "N4", true, nil)
+	g.AddEdge("N3", "N5", true, nil)
+	g.AddEdge("N5", "N2", true, nil)
 	return g
 }
 

@@ -56,6 +56,7 @@ type searchArgs struct {
 	nodeToOutEdges map[string][]*ggv.Edge
 	nameToNodes    map[string]*ggv.Node
 	buffer         *bytes.Buffer
+	colorMap       map[string]color
 }
 
 type searcher interface {
@@ -78,6 +79,19 @@ type pathStringer interface {
 }
 
 type defaultPathStringer struct{}
+
+// Marking colors during dfs is a standard way of detecting cycles.
+// A node is white before it has been discovered, gray when it is on the recursion stack, and black
+// when all of its neighbors have been traversed. A edge terminating at a grey edge implies a back
+// edge, which also implies a cycle
+// (see: https://en.wikipedia.org/wiki/Cycle_(graph_theory)#Cycle_detection).
+type color int
+
+const (
+	WHITE color = iota
+	GRAY
+	BLACK
+)
 
 // NewGrapher returns a default grapher struct with default attributes
 func NewGrapher() Grapher {
@@ -111,6 +125,7 @@ func (g *defaultGrapher) GraphAsText(dotText []byte) (string, error) {
 	nameToNodes := dag.Nodes.Lookup
 
 	buffer := new(bytes.Buffer)
+	colorMap := make(map[string]color)
 
 	for _, root := range inDegreeZeroNodes {
 		g.searcher.dfs(searchArgs{
@@ -119,8 +134,10 @@ func (g *defaultGrapher) GraphAsText(dotText []byte) (string, error) {
 			nodeToOutEdges: nodeToOutEdges,
 			nameToNodes:    nameToNodes,
 			buffer:         buffer,
+			colorMap:       colorMap,
 		})
 	}
+
 	return buffer.String(), nil
 }
 
@@ -155,15 +172,25 @@ func (c *defaultCollectionGetter) getInDegreeZeroNodes(dag *ggv.Graph) []string 
 	return inDegreeZeroNodes
 }
 
+var Count int
+
 // dfs performs a depth-first search traversal of the graph starting from a
 // given root node. When a node with no outgoing edges is reached, the path
 // taken to that node is written to a buffer.
 func (s *defaultSearcher) dfs(args searchArgs) {
 	outEdges := args.nodeToOutEdges[args.root]
-	if len(outEdges) == 0 {
-		args.buffer.WriteString(s.pathStringer.pathAsString(args.path, args.nameToNodes))
+	if args.colorMap[args.root] == GRAY {
+		logrus.Warn("The input call graph contains a cycle. This can't be represented in a " +
+			"flame graph, so this path will be ignored. For your record, the ignored path " +
+			"is:\n" + strings.TrimSpace(s.pathStringer.pathAsString(args.path, args.nameToNodes)))
 		return
 	}
+	if len(outEdges) == 0 {
+		args.buffer.WriteString(s.pathStringer.pathAsString(args.path, args.nameToNodes))
+		args.colorMap[args.root] = BLACK
+		return
+	}
+	args.colorMap[args.root] = GRAY
 	for _, edge := range outEdges {
 		s.dfs(searchArgs{
 			root:           edge.Dst,
@@ -171,8 +198,10 @@ func (s *defaultSearcher) dfs(args searchArgs) {
 			nodeToOutEdges: args.nodeToOutEdges,
 			nameToNodes:    args.nameToNodes,
 			buffer:         args.buffer,
+			colorMap:       args.colorMap,
 		})
 	}
+	args.colorMap[args.root] = BLACK
 }
 
 // pathAsString takes a path and a mapping of node names to node structs and
