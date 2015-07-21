@@ -64,11 +64,9 @@ $ godep restore
 
 Expose a pprof endpoint. Official Go docs are [here](https://golang.org/pkg/net/http/pprof/). If your application is already running a server on the DefaultServeMux, just add this import to your application.
 
-```
+```go
 import _ "net/http/pprof"
 ```
-
-If your application is not using the DefaultServeMux, you can still easily expose pprof endpoints.
 
 ## Run the Tests
 
