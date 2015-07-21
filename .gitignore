@@ -1,0 +1,9 @@
+go-torch
+
+*.test
+*.svg
+
+*.log
+*.tmp
+
+Godeps/_workspace
