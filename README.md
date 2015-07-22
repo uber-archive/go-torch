@@ -1,4 +1,4 @@
-# go-torch
+# go-torch [![Build Status](https://travis-ci.org/uber/go-torch.svg?branch=master)](https://travis-ci.org/uber/go-torch)
 
 ## Synopsis
 
