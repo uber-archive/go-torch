@@ -80,7 +80,7 @@ type pathStringer interface {
 
 type defaultPathStringer struct{}
 
-// Marking colors during dfs is a standard way of detecting cycles.
+// Marking colors during depth-first search is a standard way of detecting cycles.
 // A node is white before it has been discovered, gray when it is on the recursion stack, and black
 // when all of its neighbors have been traversed. A edge terminating at a grey edge implies a back
 // edge, which also implies a cycle
@@ -171,8 +171,6 @@ func (c *defaultCollectionGetter) getInDegreeZeroNodes(dag *ggv.Graph) []string 
 	}
 	return inDegreeZeroNodes
 }
-
-var Count int
 
 // dfs performs a depth-first search traversal of the graph starting from a
 // given root node. When a node with no outgoing edges is reached, the path
