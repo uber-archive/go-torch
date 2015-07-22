@@ -1,4 +1,4 @@
-# go-torch [![GoDoc](https://godoc.org/github.com/uber/go-torch?status.svg)](https://godoc.org/github.com/uber/go-torch)
+# go-torch [![Build Status](https://travis-ci.org/uber/go-torch.svg?branch=master)](https://travis-ci.org/uber/go-torch) [![GoDoc](https://godoc.org/github.com/uber/go-torch?status.svg)](https://godoc.org/github.com/uber/go-torch) 
 
 ## Synopsis
 
@@ -91,7 +91,9 @@ Expose a pprof endpoint. Official Go docs are
 running a server on the DefaultServeMux, just add this import to your
 application.
 
-``` import _ "net/http/pprof" ```
+```go
+import _ "net/http/pprof" 
+```
 
 If your application is not using the DefaultServeMux, you can still easily expose pprof endpoints by manually registering the net/http/pprof handlers or by using a library like [this one](https://github.com/e-dard/netbug).
 
