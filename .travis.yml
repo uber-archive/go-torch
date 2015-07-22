@@ -11,4 +11,4 @@ before_install:
   - go get golang.org/x/tools/cmd/cover
 
 script:
-  - COVERALLS='-service=travis-ci' ./.test-cover.sh
+  - ./.test-cover.sh
