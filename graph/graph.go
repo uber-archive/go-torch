@@ -56,7 +56,7 @@ type searchArgs struct {
 	nodeToOutEdges map[string][]*ggv.Edge
 	nameToNodes    map[string]*ggv.Node
 	buffer         *bytes.Buffer
-	colorMap       map[string]color
+	statusMap      map[string]discoveryStatus
 }
 
 type searcher interface {
@@ -80,17 +80,17 @@ type pathStringer interface {
 
 type defaultPathStringer struct{}
 
-// Marking colors during depth-first search is a standard way of detecting cycles.
-// A node is white before it has been discovered, gray when it is on the recursion stack, and black
-// when all of its neighbors have been traversed. A edge terminating at a grey edge implies a back
-// edge, which also implies a cycle
+// Marking nodes during depth-first search is a standard way of detecting cycles.
+// A node is UNDISCOVERED before it has been discovered, ONSTACK when it is on the recursion stack,
+// and DISCOVERED when all of its neighbors have been traversed. A edge terminating at a ONSTACK
+// node implies a back edge, which also implies a cycle
 // (see: https://en.wikipedia.org/wiki/Cycle_(graph_theory)#Cycle_detection).
-type color int
+type discoveryStatus int
 
 const (
-	WHITE color = iota
-	GRAY
-	BLACK
+	UNDISCOVERED discoveryStatus = iota
+	ONSTACK
+	DISCOVERED
 )
 
 // NewGrapher returns a default grapher struct with default attributes
@@ -125,7 +125,7 @@ func (g *defaultGrapher) GraphAsText(dotText []byte) (string, error) {
 	nameToNodes := dag.Nodes.Lookup
 
 	buffer := new(bytes.Buffer)
-	colorMap := make(map[string]color)
+	statusMap := make(map[string]discoveryStatus)
 
 	for _, root := range inDegreeZeroNodes {
 		g.searcher.dfs(searchArgs{
@@ -134,7 +134,7 @@ func (g *defaultGrapher) GraphAsText(dotText []byte) (string, error) {
 			nodeToOutEdges: nodeToOutEdges,
 			nameToNodes:    nameToNodes,
 			buffer:         buffer,
-			colorMap:       colorMap,
+			statusMap:      statusMap,
 		})
 	}
 
@@ -177,7 +177,7 @@ func (c *defaultCollectionGetter) getInDegreeZeroNodes(dag *ggv.Graph) []string 
 // taken to that node is written to a buffer.
 func (s *defaultSearcher) dfs(args searchArgs) {
 	outEdges := args.nodeToOutEdges[args.root]
-	if args.colorMap[args.root] == GRAY {
+	if args.statusMap[args.root] == ONSTACK {
 		logrus.Warn("The input call graph contains a cycle. This can't be represented in a " +
 			"flame graph, so this path will be ignored. For your record, the ignored path " +
 			"is:\n" + strings.TrimSpace(s.pathStringer.pathAsString(args.path, args.nameToNodes)))
@@ -185,10 +185,10 @@ func (s *defaultSearcher) dfs(args searchArgs) {
 	}
 	if len(outEdges) == 0 {
 		args.buffer.WriteString(s.pathStringer.pathAsString(args.path, args.nameToNodes))
-		args.colorMap[args.root] = BLACK
+		args.statusMap[args.root] = DISCOVERED
 		return
 	}
-	args.colorMap[args.root] = GRAY
+	args.statusMap[args.root] = ONSTACK
 	for _, edge := range outEdges {
 		s.dfs(searchArgs{
 			root:           edge.Dst,
@@ -196,10 +196,10 @@ func (s *defaultSearcher) dfs(args searchArgs) {
 			nodeToOutEdges: args.nodeToOutEdges,
 			nameToNodes:    args.nameToNodes,
 			buffer:         args.buffer,
-			colorMap:       args.colorMap,
+			statusMap:      args.statusMap,
 		})
 	}
-	args.colorMap[args.root] = BLACK
+	args.statusMap[args.root] = DISCOVERED
 }
 
 // pathAsString takes a path and a mapping of node names to node structs and

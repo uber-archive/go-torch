@@ -88,7 +88,7 @@ func TestDFS(t *testing.T) {
 		nodeToOutEdges: nodeToOutEdges,
 		nameToNodes:    g.Nodes.Lookup,
 		buffer:         buffer,
-		colorMap:       make(map[string]color),
+		statusMap:      make(map[string]discoveryStatus),
 	})
 
 	correctOutput := "N1;N2;N3 3\nN1;N3 2\nN1;N4;N3 8\n"
@@ -121,7 +121,7 @@ func TestDFSAlmostEmptyGraph(t *testing.T) {
 		nodeToOutEdges: nodeToOutEdges,
 		nameToNodes:    g.Nodes.Lookup,
 		buffer:         buffer,
-		colorMap:       make(map[string]color),
+		statusMap:      make(map[string]discoveryStatus),
 	})
 
 	correctOutput := ""
@@ -165,7 +165,7 @@ func TestDFSMultipleRootsLeaves(t *testing.T) {
 		nodeToOutEdges: nodeToOutEdges,
 		nameToNodes:    g.Nodes.Lookup,
 		buffer:         buffer,
-		colorMap:       make(map[string]color),
+		statusMap:      make(map[string]discoveryStatus),
 	})
 	searcherWithTestStringer.dfs(searchArgs{
 		root:           "N4",
@@ -173,7 +173,7 @@ func TestDFSMultipleRootsLeaves(t *testing.T) {
 		nodeToOutEdges: nodeToOutEdges,
 		nameToNodes:    g.Nodes.Lookup,
 		buffer:         buffer,
-		colorMap:       make(map[string]color),
+		statusMap:      make(map[string]discoveryStatus),
 	})
 
 	correctOutput := "N1;N2 3\nN1;N3 2\nN4;N5 8\nN4;N6;N5 7\n"
@@ -219,7 +219,7 @@ func TestDFSCyclicGraph(t *testing.T) {
 		nodeToOutEdges: nodeToOutEdges,
 		nameToNodes:    g.Nodes.Lookup,
 		buffer:         buffer,
-		colorMap:       make(map[string]color),
+		statusMap:      make(map[string]discoveryStatus),
 	})
 
 	correctOutput := "N1;N2;N3;N4 4\nN2;N4 2\nN1;N4 2\n"
