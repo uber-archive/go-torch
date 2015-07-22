@@ -18,6 +18,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+// Package main is the entry point of go-torch, a stochastic flame graph
+// profiler for Go programs.
 package main
 
 import (
