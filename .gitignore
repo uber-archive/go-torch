@@ -1,7 +1,6 @@
 go-torch
 
 *.test
-*.svg
 
 *.log
 *.tmp
