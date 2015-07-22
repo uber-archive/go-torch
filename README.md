@@ -102,7 +102,4 @@ $ go test ./...
 ok    github.com/uber/go-torch   0.012s
 ok    github.com/uber/go-torch/graph   0.017s
 ok    github.com/uber/go-torch/visualization 0.052s
-```  0.012s
-ok    github.com/uber/go-torch/graph   0.017s
-ok    github.com/uber/go-torch/visualization 0.052s
 ```
