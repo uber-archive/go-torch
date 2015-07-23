@@ -7,7 +7,7 @@ synthesizes them into into a flame graph. Uses Go's built in pprof library.
 
 ## Example Flame Graph
 
-![Inception](http://uber.github.io/go-torch/meta.svg)
+[![Inception](http://uber.github.io/go-torch/meta.svg)](http://uber.github.io/go-torch/meta.svg)
 
 ## Basic Usage
 
