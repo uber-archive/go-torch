@@ -31,7 +31,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/Sirupsen/logrus"
+	log "github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
 
 	"github.com/uber/go-torch/graph"
@@ -147,10 +147,10 @@ func (com *defaultCommander) goTorchCommand(c *cli.Context) {
 
 	err := com.validator.validateArgument(outputFile, `\w+\.svg`, "Output file name must be .svg")
 	if err != nil {
-		logrus.Fatal(err)
+		log.Fatal(err)
 	}
 
-	logrus.Info("Profiling ...")
+	log.Info("Profiling ...")
 
 	profileSource := ""
 	if binaryInput != "" {
@@ -161,20 +161,20 @@ func (com *defaultCommander) goTorchCommand(c *cli.Context) {
 
 	out, err := com.pprofer.runPprofCommand(time, profileSource)
 	if err != nil {
-		logrus.Fatal(err)
+		log.Fatal(err)
 	}
 	flamegraphInput, err := com.grapher.GraphAsText(out)
 	if err != nil {
-		logrus.Fatal(err)
+		log.Fatal(err)
 	}
 	flamegraphInput = strings.TrimSpace(flamegraphInput)
 	if raw {
 		fmt.Println(flamegraphInput)
-		logrus.Info("raw call graph output been printed to stdout")
+		log.Info("raw call graph output been printed to stdout")
 		return
 	}
 	if err := com.visualizer.GenerateFlameGraph(flamegraphInput, outputFile, stdout); err != nil {
-		logrus.Fatal(err)
+		log.Fatal(err)
 	}
 }
 

@@ -29,7 +29,7 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/Sirupsen/logrus"
+	log "github.com/Sirupsen/logrus"
 )
 
 var errNoPerlScript = errors.New("Cannot find flamegraph script in the PATH or current " +
@@ -69,13 +69,13 @@ func (v *defaultVisualizer) GenerateFlameGraph(graphInput, outputFilePath string
 	}
 	if stdout {
 		fmt.Println(string(out))
-		logrus.Info("flame graph has been printed to stdout")
+		log.Info("flame graph has been printed to stdout")
 		return nil
 	}
 	if err = v.executor.createFile(outputFilePath, out); err != nil {
 		return err
 	}
-	logrus.Info("flame graph has been created as " + outputFilePath)
+	log.Info("flame graph has been created as " + outputFilePath)
 
 	return nil
 }
