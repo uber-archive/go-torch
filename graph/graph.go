@@ -32,7 +32,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/Sirupsen/logrus"
+	log "github.com/Sirupsen/logrus"
 	ggv "github.com/awalterschulze/gographviz"
 	"github.com/awalterschulze/gographviz/parser"
 )
@@ -178,7 +178,7 @@ func (c *defaultCollectionGetter) getInDegreeZeroNodes(dag *ggv.Graph) []string 
 func (s *defaultSearcher) dfs(args searchArgs) {
 	outEdges := args.nodeToOutEdges[args.root]
 	if args.statusMap[args.root] == ONSTACK {
-		logrus.Warn("The input call graph contains a cycle. This can't be represented in a " +
+		log.Warn("The input call graph contains a cycle. This can't be represented in a " +
 			"flame graph, so this path will be ignored. For your record, the ignored path " +
 			"is:\n" + strings.TrimSpace(s.pathStringer.pathAsString(args.path, args.nameToNodes)))
 		return
@@ -217,7 +217,7 @@ func (p *defaultPathStringer) pathAsString(path []ggv.Edge, nameToNodes map[stri
 		if weightStr, ok := edge.Attrs["weight"]; ok {
 			weight, err := strconv.Atoi(weightStr)
 			if err != nil { // This should never happen
-				logrus.Panic(err)
+				log.Panic(err)
 			}
 			weightSum += weight
 		}
