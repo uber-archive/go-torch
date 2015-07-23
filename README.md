@@ -27,6 +27,7 @@ GLOBAL OPTIONS:
    --url, -u "http://localhost:8080"   base url of your Go program
    --suffix, -s "/debug/pprof/profile" url path of pprof profile
    --binaryinput, -b          file path of raw binary profile; alternative to having go-torch query pprof endpoint (binary profile is anything accepted by https://golang.org/cmd/pprof)
+   --binaryname               file path of the binary that the binaryinput is for, used for pprof inputs
    --time, -t "30"         time in seconds to profile for
    --file, -f "torch.svg"     ouput file name (must be .svg)
    --print, -p          print the generated svg to stdout instead of writing to file
@@ -63,6 +64,16 @@ INFO[0000] Profiling ...
 function1;function2 3
 ...
 INFO[0015] raw call graph output been printed to stdout
+```
+
+### Local pprof Example
+
+```
+$ go test -cpuprofile=cpu.pprof
+# This creates a cpu.pprof file, and the golang.test binary.
+$ go-torch --binaryfile cpu.pprof --binaryname golang.test
+INFO[0000] Profiling ...
+INFO[0000] flame graph has been created as torch.svg
 ```
 
 ## Installation
