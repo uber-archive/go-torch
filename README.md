@@ -3,7 +3,9 @@
 ## Synopsis
 
 Tool for stochastically profiling Go programs. Collects stack traces and
-synthesizes them into into a flame graph. Uses Go's built in pprof library.
+synthesizes them into into a flame graph. Uses Go's built in [pprof][] library.
+
+[pprof]: https://golang.org/pkg/net/http/pprof/
 
 ## Example Flame Graph
 
@@ -33,7 +35,6 @@ GLOBAL OPTIONS:
    --raw, -r            print the raw call graph output to stdout instead of creating a flame graph; use with Brendan Gregg's flame graph perl script (see https://github.com/brendangregg/FlameGraph)
    --help, -h           show help
    --version, -v        print the version
-
 ```
 
 ### File Example
@@ -86,16 +87,19 @@ $ git clone https://github.com/brendangregg/FlameGraph.git
 
 ## Integrating With Your Application
 
-Expose a pprof endpoint. Official Go docs are
-[here](https://golang.org/pkg/net/http/pprof/). If your application is already
-running a server on the DefaultServeMux, just add this import to your
+Expose a pprof endpoint. Official Go docs are [here][]. If your application is
+already running a server on the DefaultServeMux, just add this import to your
 application.
+
+[here]: https://golang.org/pkg/net/http/pprof/
 
 ```go
 import _ "net/http/pprof"
 ```
 
-If your application is not using the DefaultServeMux, you can still easily expose pprof endpoints by manually registering the net/http/pprof handlers or by using a library like [this one](https://github.com/e-dard/netbug).
+If your application is not using the DefaultServeMux, you can still easily
+expose pprof endpoints by manually registering the net/http/pprof handlers or by
+using a library like [this one](https://github.com/e-dard/netbug).
 
 ## Run the Tests
 
