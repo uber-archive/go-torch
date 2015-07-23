@@ -57,9 +57,10 @@ func TestCreateAndRunAppDefaultValues(t *testing.T) {
 		assert.Equal(t, "/debug/pprof/profile", context.String("suffix"))
 		assert.Equal(t, "torch.svg", context.String("file"))
 		assert.Equal(t, "", context.String("binaryinput"))
+		assert.Equal(t, "", context.String("binaryname"))
 		assert.Equal(t, false, context.Bool("print"))
 		assert.Equal(t, false, context.Bool("raw"))
-		assert.Equal(t, 9, len(context.App.Flags))
+		assert.Equal(t, 10, len(context.App.Flags))
 	}
 	mockCommander.On("goTorchCommand", mock.AnythingOfType(
 		"*cli.Context")).Return().Run(validateDefaults)
@@ -82,7 +83,7 @@ func TestGoTorchCommand(t *testing.T) {
 
 	mockValidator.On("validateArgument", "torch.svg", `\w+\.svg`,
 		"Output file name must be .svg").Return(nil).Once()
-	mockPprofer.On("runPprofCommand", 30, "http://localhost/hi").Return(samplePprofOutput, nil).Once()
+	mockPprofer.On("runPprofCommand", []string{"-seconds", "30", "http://localhost/hi"}).Return(samplePprofOutput, nil).Once()
 	mockGrapher.On("GraphAsText", samplePprofOutput).Return("1;2;3 3", nil).Once()
 	mockVisualizer.On("GenerateFlameGraph", "1;2;3 3", "torch.svg", false).Return(nil).Once()
 
@@ -108,7 +109,7 @@ func TestGoTorchCommandRawOutput(t *testing.T) {
 	samplePprofOutput := []byte("out")
 	mockValidator.On("validateArgument", "torch.svg", `\w+\.svg`,
 		"Output file name must be .svg").Return(nil).Once()
-	mockPprofer.On("runPprofCommand", 30, "http://localhost/hi").Return(samplePprofOutput, nil).Once()
+	mockPprofer.On("runPprofCommand", []string{"-seconds", "30", "http://localhost/hi"}).Return(samplePprofOutput, nil).Once()
 	mockGrapher.On("GraphAsText", samplePprofOutput).Return("1;2;3 3", nil).Once()
 
 	createSampleContextForRaw(commander)
@@ -133,7 +134,7 @@ func TestGoTorchCommandBinaryInput(t *testing.T) {
 	samplePprofOutput := []byte("out")
 	mockValidator.On("validateArgument", "torch.svg", `\w+\.svg`,
 		"Output file name must be .svg").Return(nil).Once()
-	mockPprofer.On("runPprofCommand", 30, "/path/to/binary/input").Return(samplePprofOutput, nil).Once()
+	mockPprofer.On("runPprofCommand", []string{"/path/to/binary/file", "/path/to/binary/input"}).Return(samplePprofOutput, nil).Once()
 	mockGrapher.On("GraphAsText", samplePprofOutput).Return("1;2;3 3", nil).Once()
 	mockVisualizer.On("GenerateFlameGraph", "1;2;3 3", "torch.svg", false).Return(nil).Once()
 
@@ -224,6 +225,10 @@ func createSampleContextForBinaryInput(commander *defaultCommander) {
 		cli.StringFlag{
 			Name:  "binaryinput, b",
 			Value: "/path/to/binary/input",
+		},
+		cli.StringFlag{
+			Name:  "binaryname",
+			Value: "/path/to/binary/file",
 		},
 		cli.IntFlag{
 			Name:  "time, t",
