@@ -74,8 +74,8 @@ type mockPprofer struct {
 	mock.Mock
 }
 
-func (m *mockPprofer) runPprofCommand(_a0 int, _a1 string) ([]byte, error) {
-	ret := m.Called(_a0, _a1)
+func (m *mockPprofer) runPprofCommand(args ...string) ([]byte, error) {
+	ret := m.Called(args)
 
 	var r0 []byte
 	if ret.Get(0) != nil {

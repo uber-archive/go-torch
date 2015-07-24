@@ -60,7 +60,7 @@ type validator interface {
 type defaultValidator struct{}
 
 type pprofer interface {
-	runPprofCommand(int, string) ([]byte, error)
+	runPprofCommand(args ...string) ([]byte, error)
 }
 
 type defaultPprofer struct{}
@@ -112,6 +112,11 @@ func (t *torcher) createAndRunApp() {
 			Usage: "file path of raw binary profile; alternative to having go-torch query pprof endpoint " +
 				"(binary profile is anything accepted by https://golang.org/cmd/pprof)",
 		},
+		cli.StringFlag{
+			Name:  "binaryname",
+			Value: "",
+			Usage: "file path of the binary that the binaryinput is for, used for pprof inputs",
+		},
 		cli.IntFlag{
 			Name:  "time, t",
 			Value: 30,
@@ -140,6 +145,7 @@ func (t *torcher) createAndRunApp() {
 func (com *defaultCommander) goTorchCommand(c *cli.Context) {
 	url := c.String("url") + c.String("suffix")
 	outputFile := c.String("file")
+	binaryName := c.String("binaryname")
 	binaryInput := c.String("binaryinput")
 	time := c.Int("time")
 	stdout := c.Bool("print")
@@ -152,14 +158,17 @@ func (com *defaultCommander) goTorchCommand(c *cli.Context) {
 
 	log.Info("Profiling ...")
 
-	profileSource := ""
+	var pprofArgs []string
 	if binaryInput != "" {
-		profileSource = binaryInput
+		if binaryName != "" {
+			pprofArgs = append(pprofArgs, binaryName)
+		}
+		pprofArgs = append(pprofArgs, binaryInput)
 	} else {
-		profileSource = url
+		pprofArgs = []string{"-seconds", fmt.Sprint(time), url}
 	}
 
-	out, err := com.pprofer.runPprofCommand(time, profileSource)
+	out, err := com.pprofer.runPprofCommand(pprofArgs...)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -180,11 +189,12 @@ func (com *defaultCommander) goTorchCommand(c *cli.Context) {
 
 // runPprofCommand runs the `go tool pprof` command to profile an application.
 // It returns the output of the underlying command.
-func (p *defaultPprofer) runPprofCommand(time int, profileSource string) ([]byte, error) {
-	timeArg := fmt.Sprintf("-seconds=%d", time)
+func (p *defaultPprofer) runPprofCommand(args ...string) ([]byte, error) {
+	allArgs := []string{"tool", "pprof", "-dot", "-lines"}
+	allArgs = append(allArgs, args...)
 
 	var buf bytes.Buffer
-	cmd := exec.Command("go", "tool", "pprof", "-dot", "-lines", timeArg, profileSource)
+	cmd := exec.Command("go", allArgs...)
 	cmd.Stderr = &buf
 	out, err := cmd.Output()
 	if err != nil {
