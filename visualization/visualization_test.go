@@ -96,3 +96,8 @@ func TestGenerateFlameGraphExecError(t *testing.T) {
 	mockExecutor.AssertNotCalled(t, "createFile")
 	mockExecutor.AssertExpectations(t)
 }
+
+// Smoke test the NewVisualizer method
+func TestNewVisualizer(t *testing.T) {
+	assert.NotNil(t, NewVisualizer())
+}
