@@ -72,7 +72,7 @@ INFO[0015] raw call graph output been printed to stdout
 ```
 $ go test -cpuprofile=cpu.pprof
 # This creates a cpu.pprof file, and the golang.test binary.
-$ go-torch --binaryfile cpu.pprof --binaryname golang.test
+$ go-torch --binaryinput cpu.pprof --binaryname golang.test
 INFO[0000] Profiling ...
 INFO[0000] flame graph has been created as torch.svg
 ```
