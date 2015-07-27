@@ -79,6 +79,7 @@ func TestGoTorchCommand(t *testing.T) {
 		grapher:    mockGrapher,
 		visualizer: mockVisualizer,
 	}
+
 	samplePprofOutput := []byte("out")
 
 	mockValidator.On("validateArgument", "torch.svg", `\w+\.svg`,
@@ -106,6 +107,7 @@ func TestGoTorchCommandRawOutput(t *testing.T) {
 		grapher:    mockGrapher,
 		visualizer: mockVisualizer,
 	}
+
 	samplePprofOutput := []byte("out")
 	mockValidator.On("validateArgument", "torch.svg", `\w+\.svg`,
 		"Output file name must be .svg").Return(nil).Once()
@@ -131,6 +133,7 @@ func TestGoTorchCommandBinaryInput(t *testing.T) {
 		grapher:    mockGrapher,
 		visualizer: mockVisualizer,
 	}
+
 	samplePprofOutput := []byte("out")
 	mockValidator.On("validateArgument", "torch.svg", `\w+\.svg`,
 		"Output file name must be .svg").Return(nil).Once()
@@ -155,6 +158,14 @@ func TestValidateArgumentPass(t *testing.T) {
 	assert.NotPanics(t, func() {
 		new(defaultValidator).validateArgument("good.svg", `\w+\.svg`, "Message")
 	})
+}
+
+func TestNewTorcher(t *testing.T) {
+	assert.NotNil(t, newTorcher())
+}
+
+func TestNewCommander(t *testing.T) {
+	assert.NotNil(t, newCommander())
 }
 
 func createSampleContext(commander *defaultCommander) {
