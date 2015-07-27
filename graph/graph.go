@@ -81,16 +81,16 @@ type pathStringer interface {
 type defaultPathStringer struct{}
 
 // Marking nodes during depth-first search is a standard way of detecting cycles.
-// A node is UNDISCOVERED before it has been discovered, ONSTACK when it is on the recursion stack,
-// and DISCOVERED when all of its neighbors have been traversed. A edge terminating at a ONSTACK
+// A node is undiscovered before it has been discovered, onstack when it is on the recursion stack,
+// and discovered when all of its neighbors have been traversed. A edge terminating at a onstack
 // node implies a back edge, which also implies a cycle
 // (see: https://en.wikipedia.org/wiki/Cycle_(graph_theory)#Cycle_detection).
 type discoveryStatus int
 
 const (
-	UNDISCOVERED discoveryStatus = iota
-	ONSTACK
-	DISCOVERED
+	undiscovered discoveryStatus = iota
+	onstack
+	discovered
 )
 
 // NewGrapher returns a default grapher struct with default attributes
@@ -177,7 +177,7 @@ func (c *defaultCollectionGetter) getInDegreeZeroNodes(dag *ggv.Graph) []string 
 // taken to that node is written to a buffer.
 func (s *defaultSearcher) dfs(args searchArgs) {
 	outEdges := args.nodeToOutEdges[args.root]
-	if args.statusMap[args.root] == ONSTACK {
+	if args.statusMap[args.root] == onstack {
 		log.Warn("The input call graph contains a cycle. This can't be represented in a " +
 			"flame graph, so this path will be ignored. For your record, the ignored path " +
 			"is:\n" + strings.TrimSpace(s.pathStringer.pathAsString(args.path, args.nameToNodes)))
@@ -185,10 +185,10 @@ func (s *defaultSearcher) dfs(args searchArgs) {
 	}
 	if len(outEdges) == 0 {
 		args.buffer.WriteString(s.pathStringer.pathAsString(args.path, args.nameToNodes))
-		args.statusMap[args.root] = DISCOVERED
+		args.statusMap[args.root] = discovered
 		return
 	}
-	args.statusMap[args.root] = ONSTACK
+	args.statusMap[args.root] = onstack
 	for _, edge := range outEdges {
 		s.dfs(searchArgs{
 			root:           edge.Dst,
@@ -199,7 +199,7 @@ func (s *defaultSearcher) dfs(args searchArgs) {
 			statusMap:      args.statusMap,
 		})
 	}
-	args.statusMap[args.root] = DISCOVERED
+	args.statusMap[args.root] = discovered
 }
 
 // pathAsString takes a path and a mapping of node names to node structs and
