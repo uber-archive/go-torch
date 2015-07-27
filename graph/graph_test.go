@@ -325,6 +325,14 @@ func TestGraphAsText(t *testing.T) {
 	mockSearcher.AssertExpectations(t)
 }
 
+func TestNewGrapher(t *testing.T) {
+	assert.NotNil(t, NewGrapher())
+}
+
+func TestNewSearcher(t *testing.T) {
+	assert.NotNil(t, newSearcher())
+}
+
 // The returned graph, represented in ascii:
 //	+----+     +----+
 //	| N2 | <-- | N1 |
