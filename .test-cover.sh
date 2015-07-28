@@ -10,7 +10,7 @@ do
     go test -coverprofile=profile.out $dir || FAIL=$?
     if [ -f profile.out ]
     then
-      cat profile.out | grep -v "mode: set" >> acc.out
+      cat profile.out | grep -v "mode: set" | grep -v "mocks.go" >> acc.out
       rm profile.out
     fi
   fi
