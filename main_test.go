@@ -21,6 +21,7 @@
 package main
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/codegangsta/cli"
@@ -158,6 +159,38 @@ func TestValidateArgumentPass(t *testing.T) {
 	assert.NotPanics(t, func() {
 		new(defaultValidator).validateArgument("good.svg", `\w+\.svg`, "Message")
 	})
+}
+
+func TestRunPprofCommand(t *testing.T) {
+	mockOSWrapper := new(mockOSWrapper)
+	pprofer := defaultPprofer{
+		osWrapper: mockOSWrapper,
+	}
+
+	mockOSWrapper.On("cmdOutput", mock.AnythingOfType("*exec.Cmd")).Return([]byte("output"), nil).Once()
+
+	sampleArgs := []string{"-seconds", "15", "http://localhost:8080"}
+	out, err := pprofer.runPprofCommand(sampleArgs...)
+
+	assert.Equal(t, []byte("output"), out)
+	assert.NoError(t, err)
+	mockOSWrapper.AssertExpectations(t)
+}
+
+func TestRunPprofCommandUnderlyingError(t *testing.T) {
+	mockOSWrapper := new(mockOSWrapper)
+	pprofer := defaultPprofer{
+		osWrapper: mockOSWrapper,
+	}
+
+	mockOSWrapper.On("cmdOutput", mock.AnythingOfType("*exec.Cmd")).Return(nil, errors.New("pprof underlying error")).Once()
+
+	sampleArgs := []string{"-seconds", "15", "http://localhost:8080"}
+	out, err := pprofer.runPprofCommand(sampleArgs...)
+
+	assert.Equal(t, 0, len(out))
+	assert.Error(t, err)
+	mockOSWrapper.AssertExpectations(t)
 }
 
 func TestNewTorcher(t *testing.T) {

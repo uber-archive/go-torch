@@ -59,11 +59,19 @@ type validator interface {
 
 type defaultValidator struct{}
 
+type osWrapper interface {
+	cmdOutput(*exec.Cmd) ([]byte, error)
+}
+
+type defaultOSWrapper struct{}
+
 type pprofer interface {
 	runPprofCommand(args ...string) ([]byte, error)
 }
 
-type defaultPprofer struct{}
+type defaultPprofer struct {
+	osWrapper osWrapper
+}
 
 // newTorcher returns a torcher struct with a default commander
 func newTorcher() *torcher {
@@ -76,9 +84,15 @@ func newTorcher() *torcher {
 func newCommander() commander {
 	return &defaultCommander{
 		validator:  new(defaultValidator),
-		pprofer:    new(defaultPprofer),
+		pprofer:    newPprofer(),
 		grapher:    graph.NewGrapher(),
 		visualizer: visualization.NewVisualizer(),
+	}
+}
+
+func newPprofer() pprofer {
+	return &defaultPprofer{
+		osWrapper: new(defaultOSWrapper),
 	}
 }
 
@@ -196,7 +210,7 @@ func (p *defaultPprofer) runPprofCommand(args ...string) ([]byte, error) {
 	var buf bytes.Buffer
 	cmd := exec.Command("go", allArgs...)
 	cmd.Stderr = &buf
-	out, err := cmd.Output()
+	out, err := p.osWrapper.cmdOutput(cmd)
 	if err != nil {
 		return nil, err
 	}
@@ -210,6 +224,11 @@ func (p *defaultPprofer) runPprofCommand(args ...string) ([]byte, error) {
 	}
 
 	return out, nil
+}
+
+// cmdOutput is a tiny wrapper around cmd.Output to enable test mocking
+func (w *defaultOSWrapper) cmdOutput(cmd *exec.Cmd) ([]byte, error) {
+	return cmd.Output()
 }
 
 // validateArgument validates a given command line argument with regex. If the

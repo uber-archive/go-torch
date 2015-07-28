@@ -21,6 +21,8 @@
 package main
 
 import (
+	"os/exec"
+
 	"github.com/codegangsta/cli"
 	"github.com/stretchr/testify/mock"
 )
@@ -72,6 +74,22 @@ func (m *mockValidator) validateArgument(_a0 string, _a1 string, _a2 string) err
 
 type mockPprofer struct {
 	mock.Mock
+}
+
+type mockOSWrapper struct {
+	mock.Mock
+}
+
+func (m *mockOSWrapper) cmdOutput(_a0 *exec.Cmd) ([]byte, error) {
+	ret := m.Called(_a0)
+
+	var r0 []byte
+	if ret.Get(0) != nil {
+		r0 = ret.Get(0).([]byte)
+	}
+	r1 := ret.Error(1)
+
+	return r0, r1
 }
 
 func (m *mockPprofer) runPprofCommand(args ...string) ([]byte, error) {
