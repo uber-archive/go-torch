@@ -44,7 +44,7 @@ type Visualizer interface {
 }
 
 type defaultVisualizer struct {
-	executor executor
+	executor
 }
 
 type osWrapper interface {
@@ -60,7 +60,7 @@ type executor interface {
 }
 
 type defaultExecutor struct {
-	osWrapper osWrapper
+	osWrapper
 }
 
 func newExecutor() executor {

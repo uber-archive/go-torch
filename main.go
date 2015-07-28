@@ -39,7 +39,7 @@ import (
 )
 
 type torcher struct {
-	commander commander
+	commander
 }
 
 type commander interface {
@@ -70,7 +70,7 @@ type pprofer interface {
 }
 
 type defaultPprofer struct {
-	osWrapper osWrapper
+	osWrapper
 }
 
 // newTorcher returns a torcher struct with a default commander

@@ -46,8 +46,8 @@ type Grapher interface {
 }
 
 type defaultGrapher struct {
-	searcher         searcher
-	collectionGetter collectionGetter
+	searcher
+	collectionGetter
 }
 
 type searchArgs struct {
@@ -64,7 +64,7 @@ type searcher interface {
 }
 
 type defaultSearcher struct {
-	pathStringer pathStringer
+	pathStringer
 }
 
 type collectionGetter interface {
