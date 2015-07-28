@@ -47,17 +47,32 @@ type defaultVisualizer struct {
 	executor executor
 }
 
+type osWrapper interface {
+	execLookPath(string) (string, error)
+	cmdOutput(*exec.Cmd) ([]byte, error)
+}
+
+type defaultOSWrapper struct{}
+
 type executor interface {
 	createFile(string, []byte) error
 	runPerlScript(string) ([]byte, error)
 }
 
-type defaultExecutor struct{}
+type defaultExecutor struct {
+	osWrapper osWrapper
+}
+
+func newExecutor() executor {
+	return &defaultExecutor{
+		osWrapper: new(defaultOSWrapper),
+	}
+}
 
 // NewVisualizer returns a visualizer struct with default fileCreator
 func NewVisualizer() Visualizer {
 	return &defaultVisualizer{
-		executor: new(defaultExecutor),
+		executor: newExecutor(),
 	}
 }
 
@@ -90,7 +105,7 @@ func (e *defaultExecutor) runPerlScript(graphInput string) ([]byte, error) {
 	possibilities := []string{"flamegraph.pl", cwd + "/flamegraph.pl", "flame-graph-gen"}
 	perlScript := ""
 	for _, path := range possibilities {
-		perlScript, err = exec.LookPath(path)
+		perlScript, err = e.osWrapper.execLookPath(path)
 		// found a valid script
 		if err == nil {
 			break
@@ -101,7 +116,17 @@ func (e *defaultExecutor) runPerlScript(graphInput string) ([]byte, error) {
 	}
 	cmd := exec.Command(perlScript, os.Stdin.Name())
 	cmd.Stdin = strings.NewReader(graphInput)
+	out, err := e.osWrapper.cmdOutput(cmd)
+	return out, err
+}
 
+// execLookPath is a tiny wrapper around exec.LookPath to enable test mocking
+func (w *defaultOSWrapper) execLookPath(path string) (fullPath string, err error) {
+	return exec.LookPath(path)
+}
+
+// cmdOutput is a tiny wrapper around cmd.Output to enable test mocking
+func (w *defaultOSWrapper) cmdOutput(cmd *exec.Cmd) ([]byte, error) {
 	return cmd.Output()
 }
 

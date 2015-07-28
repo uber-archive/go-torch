@@ -97,6 +97,42 @@ func TestGenerateFlameGraphExecError(t *testing.T) {
 	mockExecutor.AssertExpectations(t)
 }
 
+func TestRunPerlScriptDoesExist(t *testing.T) {
+	mockOSWrapper := new(mockOSWrapper)
+	executor := defaultExecutor{
+		osWrapper: mockOSWrapper,
+	}
+	cwd, _ := os.Getwd()
+	mockOSWrapper.On("execLookPath", "flamegraph.pl").Return("", errors.New("DNE")).Once()
+	mockOSWrapper.On("execLookPath", cwd+"/flamegraph.pl").Return("", errors.New("DNE")).Once()
+	mockOSWrapper.On("execLookPath", "flame-graph-gen").Return("/somepath/flame-graph-gen", nil).Once()
+
+	mockOSWrapper.On("cmdOutput", mock.AnythingOfType("*exec.Cmd")).Return([]byte("output"), nil).Once()
+
+	out, err := executor.runPerlScript("some graph input")
+
+	assert.Equal(t, []byte("output"), out)
+	assert.NoError(t, err)
+	mockOSWrapper.AssertExpectations(t)
+}
+
+func TestRunPerlScriptDoesNotExist(t *testing.T) {
+	mockOSWrapper := new(mockOSWrapper)
+	executor := defaultExecutor{
+		osWrapper: mockOSWrapper,
+	}
+	cwd, _ := os.Getwd()
+	mockOSWrapper.On("execLookPath", "flamegraph.pl").Return("", errors.New("DNE")).Once()
+	mockOSWrapper.On("execLookPath", cwd+"/flamegraph.pl").Return("", errors.New("DNE")).Once()
+	mockOSWrapper.On("execLookPath", "flame-graph-gen").Return("", errors.New("DNE")).Once()
+
+	out, err := executor.runPerlScript("some graph input")
+
+	assert.Equal(t, 0, len(out))
+	assert.Error(t, err)
+	mockOSWrapper.AssertExpectations(t)
+}
+
 // Smoke test the NewVisualizer method
 func TestNewVisualizer(t *testing.T) {
 	assert.NotNil(t, NewVisualizer())
