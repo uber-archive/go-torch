@@ -20,7 +20,36 @@
 
 package visualization
 
-import "github.com/stretchr/testify/mock"
+import (
+	"os/exec"
+
+	"github.com/stretchr/testify/mock"
+)
+
+type mockOSWrapper struct {
+	mock.Mock
+}
+
+func (m *mockOSWrapper) execLookPath(_a0 string) (string, error) {
+	println(_a0)
+	ret := m.Called(_a0)
+
+	r0 := ret.Get(0).(string)
+	r1 := ret.Error(1)
+
+	return r0, r1
+}
+func (m *mockOSWrapper) cmdOutput(_a0 *exec.Cmd) ([]byte, error) {
+	ret := m.Called(_a0)
+
+	var r0 []byte
+	if ret.Get(0) != nil {
+		r0 = ret.Get(0).([]byte)
+	}
+	r1 := ret.Error(1)
+
+	return r0, r1
+}
 
 type mockExecutor struct {
 	mock.Mock
