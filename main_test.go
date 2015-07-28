@@ -193,6 +193,25 @@ func TestRunPprofCommandUnderlyingError(t *testing.T) {
 	mockOSWrapper.AssertExpectations(t)
 }
 
+// 'go tool pprof' doesn't exit on errors with nonzero status codes. This test
+// ensures that go-torch will detect undrlying errors despite the pprof bug.
+// See pprof issue here https://github.com/golang/go/issues/11510
+func TestRunPprofCommandHandlePprofErrorBug(t *testing.T) {
+	mockOSWrapper := new(mockOSWrapper)
+	pprofer := defaultPprofer{
+		osWrapper: mockOSWrapper,
+	}
+
+	mockOSWrapper.On("cmdOutput", mock.AnythingOfType("*exec.Cmd")).Return([]byte{}, nil).Once()
+
+	sampleArgs := []string{"-seconds", "15", "http://localhost:8080"}
+	out, err := pprofer.runPprofCommand(sampleArgs...)
+
+	assert.Equal(t, 0, len(out))
+	assert.Error(t, err)
+	mockOSWrapper.AssertExpectations(t)
+}
+
 func TestNewTorcher(t *testing.T) {
 	assert.NotNil(t, newTorcher())
 }
