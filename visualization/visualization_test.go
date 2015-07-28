@@ -102,7 +102,10 @@ func TestRunPerlScriptDoesExist(t *testing.T) {
 	executor := defaultExecutor{
 		osWrapper: mockOSWrapper,
 	}
-	cwd, _ := os.Getwd()
+	cwd, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err.Error())
+	}
 	mockOSWrapper.On("execLookPath", "flamegraph.pl").Return("", errors.New("DNE")).Once()
 	mockOSWrapper.On("execLookPath", cwd+"/flamegraph.pl").Return("", errors.New("DNE")).Once()
 	mockOSWrapper.On("execLookPath", "flame-graph-gen").Return("/somepath/flame-graph-gen", nil).Once()
@@ -121,7 +124,10 @@ func TestRunPerlScriptDoesNotExist(t *testing.T) {
 	executor := defaultExecutor{
 		osWrapper: mockOSWrapper,
 	}
-	cwd, _ := os.Getwd()
+	cwd, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err.Error())
+	}
 	mockOSWrapper.On("execLookPath", "flamegraph.pl").Return("", errors.New("DNE")).Once()
 	mockOSWrapper.On("execLookPath", cwd+"/flamegraph.pl").Return("", errors.New("DNE")).Once()
 	mockOSWrapper.On("execLookPath", "flame-graph-gen").Return("", errors.New("DNE")).Once()
