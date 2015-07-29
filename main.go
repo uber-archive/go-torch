@@ -26,6 +26,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"net/url"
 	"os"
 	"os/exec"
 	"regexp"
@@ -157,7 +158,6 @@ func (t *torcher) createAndRunApp() {
 
 // goTorchCommand executes the 'go-torch' command.
 func (com *defaultCommander) goTorchCommand(c *cli.Context) {
-	url := c.String("url") + c.String("suffix")
 	outputFile := c.String("file")
 	binaryName := c.String("binaryname")
 	binaryInput := c.String("binaryinput")
@@ -179,7 +179,12 @@ func (com *defaultCommander) goTorchCommand(c *cli.Context) {
 		}
 		pprofArgs = append(pprofArgs, binaryInput)
 	} else {
-		pprofArgs = []string{"-seconds", fmt.Sprint(time), url}
+		u, err := url.Parse(c.String("url"))
+		if err != nil {
+			log.Fatal(err)
+		}
+		u.Path = c.String("suffix")
+		pprofArgs = []string{"-seconds", fmt.Sprint(time), u.String()}
 	}
 
 	out, err := com.pprofer.runPprofCommand(pprofArgs...)
