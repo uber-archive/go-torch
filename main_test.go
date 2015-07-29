@@ -69,7 +69,7 @@ func TestCreateAndRunAppDefaultValues(t *testing.T) {
 	torcher.createAndRunApp()
 }
 
-func TestGoTorchCommand(t *testing.T) {
+func testGoTorchCommand(t *testing.T, url string) {
 	mockValidator := new(mockValidator)
 	mockPprofer := new(mockPprofer)
 	mockGrapher := new(mockGrapher)
@@ -89,12 +89,19 @@ func TestGoTorchCommand(t *testing.T) {
 	mockGrapher.On("GraphAsText", samplePprofOutput).Return("1;2;3 3", nil).Once()
 	mockVisualizer.On("GenerateFlameGraph", "1;2;3 3", "torch.svg", false).Return(nil).Once()
 
-	createSampleContext(commander)
+	createSampleContext(commander, url)
 
 	mockValidator.AssertExpectations(t)
 	mockPprofer.AssertExpectations(t)
 	mockGrapher.AssertExpectations(t)
 	mockVisualizer.AssertExpectations(t)
+}
+
+func TestGoTorchCommand(t *testing.T) {
+	testGoTorchCommand(t, "http://localhost")
+
+	// Trailing slash in url should still work.
+	testGoTorchCommand(t, "http://localhost/")
 }
 
 func TestGoTorchCommandRawOutput(t *testing.T) {
@@ -220,13 +227,13 @@ func TestNewCommander(t *testing.T) {
 	assert.NotNil(t, newCommander())
 }
 
-func createSampleContext(commander *defaultCommander) {
+func createSampleContext(commander *defaultCommander, url string) {
 	app := cli.NewApp()
 	app.Name = "go-torch"
 	app.Flags = []cli.Flag{
 		cli.StringFlag{
 			Name:  "url, u",
-			Value: "http://localhost",
+			Value: url,
 		},
 		cli.StringFlag{
 			Name:  "suffix, s",
