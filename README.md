@@ -1,4 +1,4 @@
-# go-torch [![Build Status](https://travis-ci.org/uber/go-torch.svg?branch=master)](https://travis-ci.org/uber/go-torch) [![Coverage Status](http://coveralls.io/repos/uber/go-torch/badge.svg?branch=master&service=github)](http://coveralls.io/github/uber/go-torch?branch=master) [![GoDoc](https://godoc.org/github.com/uber/go-torch?status.svg)](https://godoc.org/github.com/uber/go-torch)
+# go-torch [![Build Status](https://travis-ci.org/uber/go-torch.svg?branch=master)](https://travis-ci.org/uber/go-torch) [![Coverage Status](http://coveralls.io/repos/uber/go-torch/badge.svg?branch=master&service=github)](http://coveralls.io/github/uber/go-torch?branch=master) [![GoDoc](https://godoc.org/github.com/uber/go-torch?status.svg)](https://godoc.org/github.com/uber/go-torch) [![CodeHunt.io](https://img.shields.io/badge/vote-codehunt.io-02AFD1.svg)](http://codehunt.io/sub/go-torch/?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
 ## Synopsis
 
