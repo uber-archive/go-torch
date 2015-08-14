@@ -3,7 +3,7 @@
 ## Synopsis
 
 Tool for stochastically profiling Go programs. Collects stack traces and
-synthesizes them into into a flame graph. Uses Go's built in [pprof][] library.
+synthesizes them into a flame graph. Uses Go's built in [pprof][] library.
 
 [pprof]: https://golang.org/pkg/net/http/pprof/
 
