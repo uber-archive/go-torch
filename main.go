@@ -191,11 +191,12 @@ func (com *defaultCommander) goTorchCommand(c *cli.Context) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	flamegraphInput, err := com.grapher.GraphAsText(out)
+
+	flamegraphInputBytes, err := newRawParser().Parse(out)
 	if err != nil {
 		log.Fatal(err)
 	}
-	flamegraphInput = strings.TrimSpace(flamegraphInput)
+	flamegraphInput := strings.TrimSpace(string(flamegraphInputBytes))
 	if raw {
 		fmt.Println(flamegraphInput)
 		log.Info("raw call graph output been printed to stdout")
@@ -209,7 +210,7 @@ func (com *defaultCommander) goTorchCommand(c *cli.Context) {
 // runPprofCommand runs the `go tool pprof` command to profile an application.
 // It returns the output of the underlying command.
 func (p *defaultPprofer) runPprofCommand(args ...string) ([]byte, error) {
-	allArgs := []string{"tool", "pprof", "-dot", "-lines"}
+	allArgs := []string{"tool", "pprof", "-raw"}
 	allArgs = append(allArgs, args...)
 
 	var buf bytes.Buffer
