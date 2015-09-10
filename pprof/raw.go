@@ -138,6 +138,10 @@ func (p *rawParser) print(w io.Writer) error {
 func (p *rawParser) addSample(line string) {
 	// Parse a sample which looks like:
 	parts := splitBySpace(line)
+	if len(parts) < 3 {
+		p.err = fmt.Errorf("malformed sample line: %v", line)
+		return
+	}
 
 	samples, err := strconv.Atoi(parts[0])
 	if err != nil {
@@ -164,6 +168,10 @@ func (p *rawParser) addSample(line string) {
 // and creates a mapping from funcID to function name.
 func (p *rawParser) addLocation(line string) {
 	parts := splitBySpace(line)
+	if len(parts) < 3 {
+		p.err = fmt.Errorf("malformed location line: %v", line)
+		return
+	}
 	funcID := p.toFuncID(strings.TrimSuffix(parts[0], ":"))
 	p.funcName[funcID] = parts[2]
 }

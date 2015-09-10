@@ -24,11 +24,12 @@ import (
 	"bytes"
 	"io/ioutil"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 )
 
-func parseTestRawData(t *testing.T) *rawParser {
+func parseTestRawData(t *testing.T) ([]byte, *rawParser) {
 	rawBytes, err := ioutil.ReadFile("testdata/pprof.raw.txt")
 	if err != nil {
 		t.Fatalf("Failed to read testdata/pprof.raw.txt: %v", err)
@@ -39,11 +40,11 @@ func parseTestRawData(t *testing.T) *rawParser {
 		t.Fatalf("Parse failed: %v", err)
 	}
 
-	return parser
+	return rawBytes, parser
 }
 
 func TestParse(t *testing.T) {
-	parser := parseTestRawData(t)
+	_, parser := parseTestRawData(t)
 
 	// line 7 - 249 are stack records in the test file.
 	const expectedNumRecords = 242
@@ -80,11 +81,12 @@ func TestParse(t *testing.T) {
 	}
 }
 
-func TestParseAndPrint(t *testing.T) {
-	parser := parseTestRawData(t)
-	buf := &bytes.Buffer{}
-	parser.print(buf)
-	got := buf.Bytes()
+func TestParseRawValid(t *testing.T) {
+	rawBytes, _ := parseTestRawData(t)
+	got, err := ParseRaw(rawBytes)
+	if err != nil {
+		t.Fatalf("ParseRaw failed: %v", err)
+	}
 
 	expected1 := `main.fib
 main.fib
@@ -109,6 +111,74 @@ runtime.morestack
 	if !bytes.Contains(got, []byte(expected2)) {
 		t.Errorf("missing expected stack: %s", expected2)
 	}
+}
+
+func testParseRawBad(t *testing.T, errorReason string, contents string) {
+	_, err := ParseRaw([]byte(contents))
+	if err == nil {
+		t.Errorf("Bad %v should cause error while parsing:%s", errorReason, contents)
+	}
+}
+
+// Test data for validating that bad input is handled.
+const (
+	sampleCount    = "2"
+	sampleTime     = "10000000"
+	funcIDLocation = "3"
+	funcIDSample   = "4"
+	simpleTemplate = `
+Samples:
+samples/count cpu/nanoseconds
+   2   10000000: 4 5 6
+Locations:
+   3: 0xaaaaa funcName :0 s=0
+`
+)
+
+func TestParseRawBadFuncID(t *testing.T) {
+	{
+		contents := strings.Replace(simpleTemplate, funcIDSample, "?sample?", -1)
+		testParseRawBad(t, "funcID in sample", contents)
+	}
+
+	{
+		contents := strings.Replace(simpleTemplate, funcIDLocation, "?location?", -1)
+		testParseRawBad(t, "funcID in location", contents)
+	}
+}
+
+func TestParseRawBadSample(t *testing.T) {
+	{
+		contents := strings.Replace(simpleTemplate, sampleCount, "??", -1)
+		testParseRawBad(t, "sample count", contents)
+	}
+
+	{
+		contents := strings.Replace(simpleTemplate, sampleTime, "??", -1)
+		testParseRawBad(t, "sample duration", contents)
+	}
+}
+
+func TestParseRawBadMalformedSample(t *testing.T) {
+	contents := `
+Samples:
+samples/count cpu/nanoseconds
+   1
+Locations:
+   3: 0xaaaaa funcName :0 s=0
+`
+	testParseRawBad(t, "malformed sample line", contents)
+}
+
+func TestParseRawBadMalformedLocation(t *testing.T) {
+	contents := `
+Samples:
+samples/count cpu/nanoseconds
+   1 10000: 2
+Locations:
+   3
+`
+	testParseRawBad(t, "malformed location line", contents)
 }
 
 func TestSplitBySpace(t *testing.T) {

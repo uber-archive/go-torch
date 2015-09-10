@@ -30,6 +30,7 @@ func TestGetArgs(t *testing.T) {
 	tests := []struct {
 		opts     Options
 		expected []string
+		wantErr  bool
 	}{
 		{
 			opts: Options{
@@ -72,12 +73,23 @@ func TestGetArgs(t *testing.T) {
 				TimeSeconds: 5},
 			expected: []string{"/path/to/binaryname", "/path/to/binaryfile"},
 		},
+		{
+			opts: Options{
+				BaseURL:     "%-0", // this makes url.Parse fail.
+				URLSuffix:   "/profile",
+				TimeSeconds: 5,
+			},
+			wantErr: true,
+		},
 	}
 
 	for _, tt := range tests {
 		got, err := getArgs(tt.opts)
+		if (err != nil) != tt.wantErr {
+			t.Errorf("wantErr %v got error: %v", tt.wantErr, err)
+			continue
+		}
 		if err != nil {
-			t.Errorf("failed to get pprof args: %v", err)
 			continue
 		}
 
@@ -105,7 +117,16 @@ func TestRunPProfInvalidURL(t *testing.T) {
 	}
 }
 
-func TestGetPProfRaw(t *testing.T) {
+func TestGetPProfRawBadURL(t *testing.T) {
+	opts := Options{
+		BaseURL: "%-0",
+	}
+	if _, err := GetRaw(opts); err == nil {
+		t.Error("expected bad BaseURL to fail")
+	}
+}
+
+func TestGetPProfRawSuccess(t *testing.T) {
 	opts := Options{
 		BinaryFile: "testdata/pprof.1.pb.gz",
 	}
