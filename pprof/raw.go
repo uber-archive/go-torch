@@ -23,11 +23,8 @@ package pprof
 import (
 	"bufio"
 	"bytes"
-	"errors"
 	"fmt"
 	"io"
-	"os"
-	"os/exec"
 	"regexp"
 	"strconv"
 	"strings"
@@ -63,9 +60,13 @@ func ParseRaw(input []byte) ([]byte, error) {
 		return nil, err
 	}
 
-	pr, pw := io.Pipe()
-	go parser.print(pw)
-	return CollapseStacks(pr)
+	// TODO(prashantv): Refactor interfaces so we use streams.
+	buf := &bytes.Buffer{}
+	if err := parser.print(buf); err != nil {
+		return nil, err
+	}
+
+	return buf.Bytes(), nil
 }
 
 func newRawParser() *rawParser {
@@ -129,28 +130,6 @@ func (p *rawParser) print(w io.Writer) error {
 		return wc.Close()
 	}
 	return nil
-}
-
-func findStackCollapse() string {
-	for _, v := range []string{"stackcollapse.pl", "./stackcollapse.pl", "./FlameGraph/stackcollapse.pl"} {
-		if path, err := exec.LookPath(v); err == nil {
-			return path
-		}
-	}
-	return ""
-}
-
-// CollapseStacks runs the flamegraph's collapse stacks script.
-func CollapseStacks(stacks io.Reader) ([]byte, error) {
-	stackCollapse := findStackCollapse()
-	if stackCollapse == "" {
-		return nil, errors.New("stackcollapse.pl not found")
-	}
-
-	cmd := exec.Command(stackCollapse)
-	cmd.Stdin = stacks
-	cmd.Stderr = os.Stderr
-	return cmd.Output()
 }
 
 // addSample parses a sample that looks like:
