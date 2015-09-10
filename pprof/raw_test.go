@@ -21,13 +21,14 @@
 package pprof
 
 import (
+	"bytes"
 	"io/ioutil"
 	"reflect"
 	"testing"
 	"time"
 )
 
-func TestParse(t *testing.T) {
+func parseTestRawData(t *testing.T) *rawParser {
 	rawBytes, err := ioutil.ReadFile("testdata/pprof.raw.txt")
 	if err != nil {
 		t.Fatalf("Failed to read testdata/pprof.raw.txt: %v", err)
@@ -37,6 +38,12 @@ func TestParse(t *testing.T) {
 	if err := parser.parse(rawBytes); err != nil {
 		t.Fatalf("Parse failed: %v", err)
 	}
+
+	return parser
+}
+
+func TestParse(t *testing.T) {
+	parser := parseTestRawData(t)
 
 	// line 7 - 249 are stack records in the test file.
 	const expectedNumRecords = 242
@@ -70,6 +77,37 @@ func TestParse(t *testing.T) {
 		if got := parser.funcName[funcID]; got != expected {
 			t.Errorf("Unexpected mapping for %v: got %v, want %v", funcID, got, expected)
 		}
+	}
+}
+
+func TestParseAndPrint(t *testing.T) {
+	parser := parseTestRawData(t)
+	buf := &bytes.Buffer{}
+	parser.print(buf)
+	got := buf.Bytes()
+
+	expected1 := `main.fib
+main.fib
+main.fib
+main.fib
+main.main
+runtime.main
+runtime.goexit
+1
+`
+	if !bytes.Contains(got, []byte(expected1)) {
+		t.Errorf("missing expected stack: %s", expected1)
+	}
+
+	expected2 := `runtime.schedule
+runtime.goschedImpl
+runtime.gopreempt_m
+runtime.newstack
+runtime.morestack
+12
+`
+	if !bytes.Contains(got, []byte(expected2)) {
+		t.Errorf("missing expected stack: %s", expected2)
 	}
 }
 

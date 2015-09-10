@@ -120,12 +120,15 @@ func (p *rawParser) processLine(line string) {
 }
 
 // print prints out the stack traces collected from the raw pprof output.
-func (p *rawParser) print(w io.WriteCloser) {
+func (p *rawParser) print(w io.Writer) error {
 	for _, r := range p.records {
 		r.Serialize(p.funcName, w)
 		fmt.Fprintln(w)
 	}
-	w.Close()
+	if wc, ok := w.(io.WriteCloser); ok {
+		return wc.Close()
+	}
+	return nil
 }
 
 func findStackCollapse() string {
