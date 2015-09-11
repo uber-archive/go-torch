@@ -141,38 +141,6 @@ func (p *rawParser) print(w io.Writer) error {
 	return nil
 }
 
-func (p *rawParser) parseInt(s string) int {
-	v, err := strconv.Atoi(s)
-	if err != nil {
-		p.setError(err)
-		return 0
-	}
-
-	return v
-}
-
-// addSample parses a sample that looks like:
-//   1   10000000: 1 2 3 4
-// and creates a stackRecord for it.
-func (p *rawParser) addSample(line string) {
-	// Parse a sample which looks like:
-	parts := splitBySpace(line)
-	if len(parts) < 3 {
-		p.setError(fmt.Errorf("malformed sample line: %v", line))
-		return
-	}
-
-	samples := p.parseInt(parts[0])
-	duration := p.parseInt(strings.TrimSuffix(parts[1], ":"))
-
-	var stack []funcID
-	for _, fIDStr := range parts[2:] {
-		stack = append(stack, p.toFuncID(fIDStr))
-	}
-
-	p.records = append(p.records, &stackRecord{samples, time.Duration(duration), stack})
-}
-
 // addLocation parses a location that looks like:
 //   292: 0x49dee1 github.com/uber/tchannel/golang.(*Frame).ReadIn :0 s=0
 // and creates a mapping from funcID to function name.
@@ -192,6 +160,27 @@ type stackRecord struct {
 	stack    []funcID
 }
 
+// addSample parses a sample that looks like:
+//   1   10000000: 1 2 3 4
+// and creates a stackRecord for it.
+func (p *rawParser) addSample(line string) {
+	// Parse a sample which looks like:
+	parts := splitBySpace(line)
+	if len(parts) < 3 {
+		p.setError(fmt.Errorf("malformed sample line: %v", line))
+		return
+	}
+
+	record := &stackRecord{
+		samples:  p.parseInt(parts[0]),
+		duration: time.Duration(p.parseInt(strings.TrimSuffix(parts[1], ":"))),
+	}
+	for _, fIDStr := range parts[2:] {
+		record.stack = append(record.stack, p.toFuncID(fIDStr))
+	}
+
+	p.records = append(p.records, record)
+}
 func getFunctionName(funcNames map[funcID]string, funcID funcID) string {
 	if funcName, ok := funcNames[funcID]; ok {
 		return funcName
@@ -205,6 +194,17 @@ func (r *stackRecord) serialize(funcNames map[funcID]string, w io.Writer) {
 		fmt.Fprintln(w, getFunctionName(funcNames, funcID))
 	}
 	fmt.Fprintln(w, r.samples)
+}
+
+// parseInt converts a string to an int. It stores any errors using setError.
+func (p *rawParser) parseInt(s string) int {
+	v, err := strconv.Atoi(s)
+	if err != nil {
+		p.setError(err)
+		return 0
+	}
+
+	return v
 }
 
 // toFuncID converts a string like "8" to a funcID.
