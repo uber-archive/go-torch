@@ -21,294 +21,183 @@
 package main
 
 import (
-	"errors"
+	"bufio"
+	"io/ioutil"
+	"os"
+	"path/filepath"
+	"strings"
 	"testing"
 
-	"github.com/codegangsta/cli"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
+	gflags "github.com/jessevdk/go-flags"
 )
 
-func TestCreateAndRunApp(t *testing.T) {
-	mockCommander := new(mockCommander)
-	torcher := &torcher{
-		commander: mockCommander,
-	}
+const testPProfInputFile = "./pprof/testdata/pprof.1.pb.gz"
 
-	var validateContext = func(args mock.Arguments) {
-		context := args.Get(0).(*cli.Context)
-		assert.NotNil(t, context)
-		assert.Equal(t, "go-torch", context.App.Name)
+func getDefaultOptions() *options {
+	opts := &options{}
+	if _, err := gflags.ParseArgs(opts, nil); err != nil {
+		panic(err)
 	}
-	mockCommander.On("goTorchCommand", mock.AnythingOfType("*cli.Context")).Return().Run(validateContext).Once()
-
-	torcher.createAndRunApp()
+	opts.PProfOptions.BinaryFile = testPProfInputFile
+	return opts
 }
 
-func TestCreateAndRunAppDefaultValues(t *testing.T) {
-	mockCommander := new(mockCommander)
-	torcher := &torcher{
-		commander: mockCommander,
+func TestBadArgs(t *testing.T) {
+	err := runWithArgs("-t", "asd")
+	if err == nil {
+		t.Fatalf("expected run with bad arguments to fail")
 	}
 
-	validateDefaults := func(args mock.Arguments) {
-		context := args.Get(0).(*cli.Context)
-		assert.Equal(t, 30, context.Int("time"))
-		assert.Equal(t, "http://localhost:8080", context.String("url"))
-		assert.Equal(t, "/debug/pprof/profile", context.String("suffix"))
-		assert.Equal(t, "torch.svg", context.String("file"))
-		assert.Equal(t, "", context.String("binaryinput"))
-		assert.Equal(t, "", context.String("binaryname"))
-		assert.Equal(t, false, context.Bool("print"))
-		assert.Equal(t, false, context.Bool("raw"))
-		assert.Equal(t, 10, len(context.App.Flags))
+	expectedSubstr := []string{
+		"could not parse options",
+		"invalid argument",
 	}
-	mockCommander.On("goTorchCommand", mock.AnythingOfType(
-		"*cli.Context")).Return().Run(validateDefaults)
-
-	torcher.createAndRunApp()
-}
-
-func testGoTorchCommand(t *testing.T, url string) {
-	mockValidator := new(mockValidator)
-	mockPprofer := new(mockPprofer)
-	mockGrapher := new(mockGrapher)
-	mockVisualizer := new(mockVisualizer)
-	commander := &defaultCommander{
-		validator:  mockValidator,
-		pprofer:    mockPprofer,
-		grapher:    mockGrapher,
-		visualizer: mockVisualizer,
+	for _, substr := range expectedSubstr {
+		if !strings.Contains(err.Error(), substr) {
+			t.Errorf("error is missing message: %v", substr)
+		}
 	}
-
-	samplePprofOutput := []byte("out")
-
-	mockValidator.On("validateArgument", "torch.svg", `\w+\.svg`,
-		"Output file name must be .svg").Return(nil).Once()
-	mockPprofer.On("runPprofCommand", []string{"-seconds", "30", "http://localhost/hi"}).Return(samplePprofOutput, nil).Once()
-	mockGrapher.On("GraphAsText", samplePprofOutput).Return("1;2;3 3", nil).Once()
-	mockVisualizer.On("GenerateFlameGraph", "1;2;3 3", "torch.svg", false).Return(nil).Once()
-
-	createSampleContext(commander, url)
-
-	mockValidator.AssertExpectations(t)
-	mockPprofer.AssertExpectations(t)
-	mockGrapher.AssertExpectations(t)
-	mockVisualizer.AssertExpectations(t)
 }
 
-func TestGoTorchCommand(t *testing.T) {
-	testGoTorchCommand(t, "http://localhost")
-
-	// Trailing slash in url should still work.
-	testGoTorchCommand(t, "http://localhost/")
+func TestMain(t *testing.T) {
+	os.Args = []string{"--raw", "--binaryinput", testPProfInputFile}
+	main()
+	// Test should not fatal.
 }
 
-func TestGoTorchCommandRawOutput(t *testing.T) {
-	mockValidator := new(mockValidator)
-	mockPprofer := new(mockPprofer)
-	mockGrapher := new(mockGrapher)
-	mockVisualizer := new(mockVisualizer)
-	commander := &defaultCommander{
-		validator:  mockValidator,
-		pprofer:    mockPprofer,
-		grapher:    mockGrapher,
-		visualizer: mockVisualizer,
+func TestInvalidOptions(t *testing.T) {
+	tests := []struct {
+		args         []string
+		errorMessage string
+	}{
+		{
+			args:         []string{"--file", "bad.jpg"},
+			errorMessage: "must end in .svg",
+		},
+		{
+			args:         []string{"-t", "0"},
+			errorMessage: "seconds must be an integer greater than 0",
+		},
 	}
 
-	samplePprofOutput := []byte("out")
-	mockValidator.On("validateArgument", "torch.svg", `\w+\.svg`,
-		"Output file name must be .svg").Return(nil).Once()
-	mockPprofer.On("runPprofCommand", []string{"-seconds", "30", "http://localhost/hi"}).Return(samplePprofOutput, nil).Once()
-	mockGrapher.On("GraphAsText", samplePprofOutput).Return("1;2;3 3", nil).Once()
+	for _, tt := range tests {
+		err := runWithArgs(tt.args...)
+		if err == nil {
+			t.Errorf("Expected error when running with: %v", tt.args)
+			continue
+		}
 
-	createSampleContextForRaw(commander)
-
-	mockValidator.AssertExpectations(t)
-	mockPprofer.AssertExpectations(t)
-	mockGrapher.AssertExpectations(t)
-	mockVisualizer.AssertExpectations(t) // ensure that mockVisualizer was never called
+		if !strings.Contains(err.Error(), tt.errorMessage) {
+			t.Errorf("Error missing message, got %v want message %v", err.Error(), tt.errorMessage)
+		}
+	}
 }
 
-func TestGoTorchCommandBinaryInput(t *testing.T) {
-	mockValidator := new(mockValidator)
-	mockPprofer := new(mockPprofer)
-	mockGrapher := new(mockGrapher)
-	mockVisualizer := new(mockVisualizer)
-	commander := &defaultCommander{
-		validator:  mockValidator,
-		pprofer:    mockPprofer,
-		grapher:    mockGrapher,
-		visualizer: mockVisualizer,
+func TestRunRaw(t *testing.T) {
+	opts := getDefaultOptions()
+	opts.Raw = true
+
+	if err := runWithOptions(opts); err != nil {
+		t.Fatalf("Run with Raw failed: %v", err)
+	}
+}
+
+func getTempFilename(t *testing.T, suffix string) string {
+	f, err := ioutil.TempFile("", "")
+	if err != nil {
+		t.Fatalf("Failed to create temp file: %v", err)
 	}
 
-	samplePprofOutput := []byte("out")
-	mockValidator.On("validateArgument", "torch.svg", `\w+\.svg`,
-		"Output file name must be .svg").Return(nil).Once()
-	mockPprofer.On("runPprofCommand", []string{"/path/to/binary/file", "/path/to/binary/input"}).Return(samplePprofOutput, nil).Once()
-	mockGrapher.On("GraphAsText", samplePprofOutput).Return("1;2;3 3", nil).Once()
-	mockVisualizer.On("GenerateFlameGraph", "1;2;3 3", "torch.svg", false).Return(nil).Once()
-
-	createSampleContextForBinaryInput(commander)
-
-	mockValidator.AssertExpectations(t)
-	mockPprofer.AssertExpectations(t)
-	mockGrapher.AssertExpectations(t)
-	mockVisualizer.AssertExpectations(t)
+	defer f.Close()
+	return f.Name() + suffix
 }
 
-func TestValidateArgumentFail(t *testing.T) {
-	validator := new(defaultValidator)
-	assert.Error(t, validator.validateArgument("bad bad", `\w+\.svg`, "Message"))
-}
+func TestRunFile(t *testing.T) {
+	opts := getDefaultOptions()
+	opts.File = getTempFilename(t, ".svg")
 
-func TestValidateArgumentPass(t *testing.T) {
-	assert.NotPanics(t, func() {
-		new(defaultValidator).validateArgument("good.svg", `\w+\.svg`, "Message")
+	withScriptsInPath(t, func() {
+		if err := runWithOptions(opts); err != nil {
+			t.Fatalf("Run with Print failed: %v", err)
+		}
+
+		f, err := os.Open(opts.File)
+		if err != nil {
+			t.Errorf("Failed to open output file: %v", err)
+		}
+		defer f.Close()
+
+		// Our fake flamegraph scripts just add script names to the output.
+		reader := bufio.NewReader(f)
+		line1, err := reader.ReadString('\n')
+		if err != nil {
+			t.Errorf("Failed to read line 1 in output file: %v", err)
+		}
+		line2, err := reader.ReadString('\n')
+		if err != nil {
+			t.Errorf("Failed to read line 2 in output file: %v", err)
+		}
+
+		if !strings.Contains(line1, "flamegraph.pl") ||
+			!strings.Contains(line2, "stackcollapse.pl") {
+			t.Errorf("Output file has not been processed by flame graph scripts")
+		}
 	})
 }
 
-func TestRunPprofCommand(t *testing.T) {
-	mockOSWrapper := new(mockOSWrapper)
-	pprofer := defaultPprofer{
-		osWrapper: mockOSWrapper,
+func TestRunBadFile(t *testing.T) {
+	opts := getDefaultOptions()
+	opts.File = "/dev/zero/invalid/file"
+
+	withScriptsInPath(t, func() {
+		if err := runWithOptions(opts); err == nil {
+			t.Fatalf("Run with bad file expected to fail")
+		}
+	})
+}
+
+func TestRunPrint(t *testing.T) {
+	opts := getDefaultOptions()
+	opts.Print = true
+
+	withScriptsInPath(t, func() {
+		if err := runWithOptions(opts); err != nil {
+			t.Fatalf("Run with Print failed: %v", err)
+		}
+		// TODO(prashantv): Verify that output is printed to stdout.
+	})
+}
+
+// scriptsPath is used to cache the fake scripts if we've already created it.
+var scriptsPath string
+
+func withScriptsInPath(t *testing.T, f func()) {
+	oldPath := os.Getenv("PATH")
+	defer os.Setenv("PATH", oldPath)
+
+	// Create a temporary directory with fake flamegraph scripts if we haven't already.
+	if scriptsPath == "" {
+		var err error
+		scriptsPath, err = ioutil.TempDir("", "go-torch-scripts")
+		if err != nil {
+			t.Fatalf("Failed to create temporary scripts dir: %v", err)
+		}
+
+		// Create scripts in this path.
+		const scriptContents = `#!/bin/sh
+		echo $0
+		cat
+		`
+		scripts := []string{"stackcollapse.pl", "flamegraph.pl"}
+		scriptContentsBytes := []byte(scriptContents)
+		for _, s := range scripts {
+			scriptFile := filepath.Join(scriptsPath, s)
+			if err := ioutil.WriteFile(scriptFile, scriptContentsBytes, 0777); err != nil {
+				t.Errorf("Failed to create script %v: %v", scriptFile, err)
+			}
+		}
 	}
 
-	mockOSWrapper.On("cmdOutput", mock.AnythingOfType("*exec.Cmd")).Return([]byte("output"), nil).Once()
-
-	sampleArgs := []string{"-seconds", "15", "http://localhost:8080"}
-	out, err := pprofer.runPprofCommand(sampleArgs...)
-
-	assert.Equal(t, []byte("output"), out)
-	assert.NoError(t, err)
-	mockOSWrapper.AssertExpectations(t)
-}
-
-func TestRunPprofCommandUnderlyingError(t *testing.T) {
-	mockOSWrapper := new(mockOSWrapper)
-	pprofer := defaultPprofer{
-		osWrapper: mockOSWrapper,
-	}
-
-	mockOSWrapper.On("cmdOutput", mock.AnythingOfType("*exec.Cmd")).Return(nil, errors.New("pprof underlying error")).Once()
-
-	sampleArgs := []string{"-seconds", "15", "http://localhost:8080"}
-	out, err := pprofer.runPprofCommand(sampleArgs...)
-
-	assert.Equal(t, 0, len(out))
-	assert.Error(t, err)
-	mockOSWrapper.AssertExpectations(t)
-}
-
-// 'go tool pprof' doesn't exit on errors with nonzero status codes. This test
-// ensures that go-torch will detect undrlying errors despite the pprof bug.
-// See pprof issue here https://github.com/golang/go/issues/11510
-func TestRunPprofCommandHandlePprofErrorBug(t *testing.T) {
-	mockOSWrapper := new(mockOSWrapper)
-	pprofer := defaultPprofer{
-		osWrapper: mockOSWrapper,
-	}
-
-	mockOSWrapper.On("cmdOutput", mock.AnythingOfType("*exec.Cmd")).Return([]byte{}, nil).Once()
-
-	sampleArgs := []string{"-seconds", "15", "http://localhost:8080"}
-	out, err := pprofer.runPprofCommand(sampleArgs...)
-
-	assert.Equal(t, 0, len(out))
-	assert.Error(t, err)
-	mockOSWrapper.AssertExpectations(t)
-}
-
-func TestNewTorcher(t *testing.T) {
-	assert.NotNil(t, newTorcher())
-}
-
-func TestNewCommander(t *testing.T) {
-	assert.NotNil(t, newCommander())
-}
-
-func createSampleContext(commander *defaultCommander, url string) {
-	app := cli.NewApp()
-	app.Name = "go-torch"
-	app.Flags = []cli.Flag{
-		cli.StringFlag{
-			Name:  "url, u",
-			Value: url,
-		},
-		cli.StringFlag{
-			Name:  "suffix, s",
-			Value: "/hi",
-		},
-		cli.IntFlag{
-			Name:  "time, t",
-			Value: 30,
-		},
-		cli.StringFlag{
-			Name:  "file, f",
-			Value: "torch.svg",
-		},
-	}
-	app.Action = commander.goTorchCommand
-	app.Run([]string{"go-torch"})
-}
-
-func createSampleContextForRaw(commander *defaultCommander) {
-	app := cli.NewApp()
-	app.Name = "go-torch"
-	app.Flags = []cli.Flag{
-		cli.StringFlag{
-			Name:  "url, u",
-			Value: "http://localhost",
-		},
-		cli.StringFlag{
-			Name:  "suffix, s",
-			Value: "/hi",
-		},
-		cli.IntFlag{
-			Name:  "time, t",
-			Value: 30,
-		},
-		cli.StringFlag{
-			Name:  "file, f",
-			Value: "torch.svg",
-		},
-		cli.BoolTFlag{
-			Name: "raw, r",
-		},
-	}
-	app.Action = commander.goTorchCommand
-	app.Run([]string{"go-torch"})
-}
-
-func createSampleContextForBinaryInput(commander *defaultCommander) {
-	app := cli.NewApp()
-	app.Name = "go-torch"
-	app.Flags = []cli.Flag{
-		cli.StringFlag{
-			Name:  "url, u",
-			Value: "http://localhost",
-		},
-		cli.StringFlag{
-			Name:  "suffix, s",
-			Value: "/hi",
-		},
-		cli.StringFlag{
-			Name:  "binaryinput, b",
-			Value: "/path/to/binary/input",
-		},
-		cli.StringFlag{
-			Name:  "binaryname",
-			Value: "/path/to/binary/file",
-		},
-		cli.IntFlag{
-			Name:  "time, t",
-			Value: 30,
-		},
-		cli.StringFlag{
-			Name:  "file, f",
-			Value: "torch.svg",
-		},
-	}
-	app.Action = commander.goTorchCommand
-	app.Run([]string{"go-torch"})
+	os.Setenv("PATH", scriptsPath+":"+oldPath)
+	f()
 }
