@@ -132,7 +132,7 @@ func (p *rawParser) processLine(line string) {
 // print prints out the stack traces collected from the raw pprof output.
 func (p *rawParser) print(w io.Writer) error {
 	for _, r := range p.records {
-		r.Serialize(p.funcName, w)
+		r.serialize(p.funcName, w)
 		fmt.Fprintln(w)
 	}
 	if wc, ok := w.(io.WriteCloser); ok {
@@ -199,8 +199,8 @@ func getFunctionName(funcNames map[funcID]string, funcID funcID) string {
 	return fmt.Sprintf("missing-function-%v", funcID)
 }
 
-// Serialize serializes a call stack for a given stackRecord given the funcID mapping.
-func (r *stackRecord) Serialize(funcNames map[funcID]string, w io.Writer) {
+// serialize serializes a call stack for a given stackRecord given the funcID mapping.
+func (r *stackRecord) serialize(funcNames map[funcID]string, w io.Writer) {
 	for _, funcID := range r.stack {
 		fmt.Fprintln(w, getFunctionName(funcNames, funcID))
 	}
