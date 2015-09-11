@@ -113,10 +113,32 @@ runtime.morestack
 	}
 }
 
-func testParseRawBad(t *testing.T, errorReason string, contents string) {
+func TestParseMissingLocation(t *testing.T) {
+	contents := `Samples:
+	samples/count cpu/nanoseconds
+	   2   10000000: 1 2
+	Locations:
+	   1: 0xaaaaa funcName :0 s=0
+`
+	out, err := ParseRaw([]byte(contents))
+	if err != nil {
+		t.Fatalf("Missing location should not cause an error, got %v", err)
+	}
+
+	if !bytes.Contains(out, []byte("missing-function-2")) {
+		t.Errorf("Missing function call stack should show missing-function-2, got: %s", out)
+	}
+}
+
+func testParseRawBad(t *testing.T, errorReason, errorSubstr, contents string) {
 	_, err := ParseRaw([]byte(contents))
 	if err == nil {
 		t.Errorf("Bad %v should cause error while parsing:%s", errorReason, contents)
+		return
+	}
+
+	if !strings.Contains(err.Error(), errorSubstr) {
+		t.Errorf("Bad %v error should contain %q, got %v", errorReason, errorSubstr, err)
 	}
 }
 
@@ -138,25 +160,31 @@ Locations:
 func TestParseRawBadFuncID(t *testing.T) {
 	{
 		contents := strings.Replace(simpleTemplate, funcIDSample, "?sample?", -1)
-		testParseRawBad(t, "funcID in sample", contents)
+		testParseRawBad(t, "funcID in sample", "strconv.ParseInt", contents)
 	}
 
 	{
 		contents := strings.Replace(simpleTemplate, funcIDLocation, "?location?", -1)
-		testParseRawBad(t, "funcID in location", contents)
+		testParseRawBad(t, "funcID in location", "strconv.ParseInt", contents)
 	}
 }
 
 func TestParseRawBadSample(t *testing.T) {
 	{
 		contents := strings.Replace(simpleTemplate, sampleCount, "??", -1)
-		testParseRawBad(t, "sample count", contents)
+		testParseRawBad(t, "sample count", "strconv.ParseInt", contents)
 	}
 
 	{
 		contents := strings.Replace(simpleTemplate, sampleTime, "??", -1)
-		testParseRawBad(t, "sample duration", contents)
+		testParseRawBad(t, "sample duration", "strconv.ParseInt", contents)
 	}
+}
+
+func TestParseRawBadMultipleErrors(t *testing.T) {
+	contents := strings.Replace(simpleTemplate, sampleCount, "?s?", -1)
+	contents = strings.Replace(contents, sampleTime, "?t?", -1)
+	testParseRawBad(t, "sample duration", `strconv.ParseInt: parsing "?s?"`, contents)
 }
 
 func TestParseRawBadMalformedSample(t *testing.T) {
@@ -167,7 +195,7 @@ samples/count cpu/nanoseconds
 Locations:
    3: 0xaaaaa funcName :0 s=0
 `
-	testParseRawBad(t, "malformed sample line", contents)
+	testParseRawBad(t, "malformed sample line", "malformed sample", contents)
 }
 
 func TestParseRawBadMalformedLocation(t *testing.T) {
@@ -178,7 +206,16 @@ samples/count cpu/nanoseconds
 Locations:
    3
 `
-	testParseRawBad(t, "malformed location line", contents)
+	testParseRawBad(t, "malformed location line", "malformed location", contents)
+}
+
+func TestParseRawBadNoLocations(t *testing.T) {
+	contents := `
+Samples:
+samples/count cpu/nanoseconds
+   1 10000: 2
+`
+	testParseRawBad(t, "no locations", "parser ended before processing locations", contents)
 }
 
 func TestSplitBySpace(t *testing.T) {

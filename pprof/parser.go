@@ -80,18 +80,27 @@ func (p *rawParser) parse(input []byte) error {
 
 	for {
 		line, err := reader.ReadString('\n')
-		line = strings.TrimSpace(line)
 		if err != nil {
 			if err == io.EOF {
+				if p.state < locations {
+					p.setError(fmt.Errorf("parser ended before processing locations, state: %v", p.state))
+				}
 				break
 			}
 			return err
 		}
 
-		p.processLine(line)
+		p.processLine(strings.TrimSpace(line))
 	}
 
 	return p.err
+}
+
+func (p *rawParser) setError(err error) {
+	if p.err != nil {
+		return
+	}
+	p.err = err
 }
 
 func (p *rawParser) processLine(line string) {
@@ -132,6 +141,16 @@ func (p *rawParser) print(w io.Writer) error {
 	return nil
 }
 
+func (p *rawParser) parseInt(s string) int {
+	v, err := strconv.Atoi(s)
+	if err != nil {
+		p.setError(err)
+		return 0
+	}
+
+	return v
+}
+
 // addSample parses a sample that looks like:
 //   1   10000000: 1 2 3 4
 // and creates a stackRecord for it.
@@ -139,21 +158,12 @@ func (p *rawParser) addSample(line string) {
 	// Parse a sample which looks like:
 	parts := splitBySpace(line)
 	if len(parts) < 3 {
-		p.err = fmt.Errorf("malformed sample line: %v", line)
+		p.setError(fmt.Errorf("malformed sample line: %v", line))
 		return
 	}
 
-	samples, err := strconv.Atoi(parts[0])
-	if err != nil {
-		p.err = err
-		return
-	}
-
-	duration, err := strconv.Atoi(strings.TrimSuffix(parts[1], ":"))
-	if err != nil {
-		p.err = err
-		return
-	}
+	samples := p.parseInt(parts[0])
+	duration := p.parseInt(strings.TrimSuffix(parts[1], ":"))
 
 	var stack []funcID
 	for _, fIDStr := range parts[2:] {
@@ -169,7 +179,7 @@ func (p *rawParser) addSample(line string) {
 func (p *rawParser) addLocation(line string) {
 	parts := splitBySpace(line)
 	if len(parts) < 3 {
-		p.err = fmt.Errorf("malformed location line: %v", line)
+		p.setError(fmt.Errorf("malformed location line: %v", line))
 		return
 	}
 	funcID := p.toFuncID(strings.TrimSuffix(parts[0], ":"))
@@ -182,22 +192,24 @@ type stackRecord struct {
 	stack    []funcID
 }
 
+func getFunctionName(funcNames map[funcID]string, funcID funcID) string {
+	if funcName, ok := funcNames[funcID]; ok {
+		return funcName
+	}
+	return fmt.Sprintf("missing-function-%v", funcID)
+}
+
 // Serialize serializes a call stack for a given stackRecord given the funcID mapping.
-func (r *stackRecord) Serialize(funcName map[funcID]string, w io.Writer) {
+func (r *stackRecord) Serialize(funcNames map[funcID]string, w io.Writer) {
 	for _, funcID := range r.stack {
-		fmt.Fprintln(w, funcName[funcID])
+		fmt.Fprintln(w, getFunctionName(funcNames, funcID))
 	}
 	fmt.Fprintln(w, r.samples)
 }
 
 // toFuncID converts a string like "8" to a funcID.
 func (p *rawParser) toFuncID(s string) funcID {
-	i, err := strconv.Atoi(s)
-	if err != nil {
-		p.err = fmt.Errorf("failed to parse funcID: %v", err)
-		return 0
-	}
-	return funcID(i)
+	return funcID(p.parseInt(s))
 }
 
 var spaceSplitter = regexp.MustCompile(`\s+`)
