@@ -26,6 +26,8 @@ import (
 	"testing"
 )
 
+const testData = "1 2 3 4 5\n"
+
 func TestFindInPatch(t *testing.T) {
 	const realCmd1 = "ls"
 	const realCmd2 = "cat"
@@ -72,4 +74,55 @@ func TestFindInPatch(t *testing.T) {
 			}
 		}
 	}
+}
+
+func TestRunScriptNoInput(t *testing.T) {
+	out, err := runScript("echo", []string{"1", "2", "3"}, nil)
+	if err != nil {
+		t.Fatalf("run echo failed: %v", err)
+	}
+
+	const want = "1 2 3\n"
+	if string(out) != want {
+		t.Errorf("Got unexpected output:\n  got %v\n want %v", string(out), want)
+	}
+}
+
+type scriptFn func([]byte) ([]byte, error)
+
+func testScriptFound(t *testing.T, sliceToStub []string, f scriptFn) {
+	// Stub out the scripts that it looks at for the test
+	origVal := sliceToStub[0]
+	sliceToStub[0] = "cat"
+	defer func() { sliceToStub[0] = origVal }()
+
+	out, err := f([]byte(testData))
+	if err != nil {
+		t.Fatalf("Failed to run script: %v", err)
+	}
+
+	if string(out) != testData {
+		t.Errorf("Got unexpected output:\n  got %v\n want %v", string(out), testData)
+	}
+}
+
+func testScriptNotFound(t *testing.T, sliceToStub *[]string, f scriptFn) {
+	origVal := *sliceToStub
+	*sliceToStub = []string{}
+	defer func() { *sliceToStub = origVal }()
+
+	_, err := f([]byte(testData))
+	if err != errNoPerlScript {
+		t.Errorf("Unexpected error:\n  got %v\n want %v", err, errNoPerlScript)
+	}
+}
+
+func TestCollapseStacks(t *testing.T) {
+	testScriptFound(t, stackCollapseScripts, CollapseStacks)
+	testScriptNotFound(t, &stackCollapseScripts, CollapseStacks)
+}
+
+func TestGenerateFlameGraph(t *testing.T) {
+	testScriptFound(t, flameGraphScripts, GenerateFlameGraph)
+	testScriptNotFound(t, &flameGraphScripts, GenerateFlameGraph)
 }
