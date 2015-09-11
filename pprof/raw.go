@@ -31,10 +31,10 @@ import (
 	"time"
 )
 
-type readMode int
+type readState int
 
 const (
-	ignore readMode = iota
+	ignore readState = iota
 	samplesHeader
 	samples
 	locations
@@ -48,7 +48,7 @@ type rawParser struct {
 	// err is the first error encountered by the parser.
 	err error
 
-	mode     readMode
+	state    readState
 	funcName map[funcID]string
 	records  []*stackRecord
 }
@@ -95,23 +95,23 @@ func (p *rawParser) parse(input []byte) error {
 }
 
 func (p *rawParser) processLine(line string) {
-	switch p.mode {
+	switch p.state {
 	case ignore:
 		if strings.HasPrefix(line, "Samples") {
-			p.mode = samplesHeader
+			p.state = samplesHeader
 			return
 		}
 	case samplesHeader:
-		p.mode = samples
+		p.state = samples
 	case samples:
 		if strings.HasPrefix(line, "Locations") {
-			p.mode = locations
+			p.state = locations
 			return
 		}
 		p.addSample(line)
 	case locations:
 		if strings.HasPrefix(line, "Mappings") {
-			p.mode = mappings
+			p.state = mappings
 			return
 		}
 		p.addLocation(line)
