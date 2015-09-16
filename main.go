@@ -53,6 +53,9 @@ func main() {
 func runWithArgs(args ...string) error {
 	opts := &options{}
 	if _, err := gflags.ParseArgs(opts, args); err != nil {
+		if flagErr, ok := err.(*gflags.Error); ok && flagErr.Type == gflags.ErrHelp {
+			os.Exit(0)
+		}
 		return fmt.Errorf("could not parse options: %v", err)
 	}
 	if err := validateOptions(opts); err != nil {
