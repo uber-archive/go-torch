@@ -45,6 +45,7 @@ type options struct {
 
 // main is the entry point of the application
 func main() {
+	log.SetFlags(log.Ltime)
 	if err := runWithArgs(os.Args...); err != nil {
 		log.Fatalf("Failed: %v", err)
 	}
