@@ -21,12 +21,13 @@
 package pprof
 
 import (
-	"bytes"
 	"io/ioutil"
 	"reflect"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/uber/go-torch/stack"
 )
 
 func parseTestRawData(t *testing.T) ([]byte, *rawParser) {
@@ -65,9 +66,9 @@ func TestParse(t *testing.T) {
 
 	// line 250 - 290 are locations (or funcID mappings)
 	const expectedFuncIDs = 41
-	if len(parser.funcName) != expectedFuncIDs {
+	if len(parser.funcNames) != expectedFuncIDs {
 		t.Errorf("Failed to parse func ID mappings, got %v records, expected %v",
-			len(parser.funcName), expectedFuncIDs)
+			len(parser.funcNames), expectedFuncIDs)
 	}
 	knownMappings := map[funcID]string{
 		1:  "main.fib",
@@ -75,7 +76,7 @@ func TestParse(t *testing.T) {
 		34: "runtime.morestack",
 	}
 	for funcID, expected := range knownMappings {
-		if got := parser.funcName[funcID]; got != expected {
+		if got := parser.funcNames[funcID]; got != expected {
 			t.Errorf("Unexpected mapping for %v: got %v, want %v", funcID, got, expected)
 		}
 	}
@@ -88,28 +89,8 @@ func TestParseRawValid(t *testing.T) {
 		t.Fatalf("ParseRaw failed: %v", err)
 	}
 
-	expected1 := `main.fib
-main.fib
-main.fib
-main.fib
-main.main
-runtime.main
-runtime.goexit
-1
-`
-	if !bytes.Contains(got, []byte(expected1)) {
-		t.Errorf("missing expected stack: %s", expected1)
-	}
-
-	expected2 := `runtime.schedule
-runtime.goschedImpl
-runtime.gopreempt_m
-runtime.newstack
-runtime.morestack
-12
-`
-	if !bytes.Contains(got, []byte(expected2)) {
-		t.Errorf("missing expected stack: %s", expected2)
+	if expected := 18; len(got) != expected {
+		t.Errorf("Expected %v unique stack samples, got %v", expected, got)
 	}
 }
 
@@ -125,8 +106,12 @@ func TestParseMissingLocation(t *testing.T) {
 		t.Fatalf("Missing location should not cause an error, got %v", err)
 	}
 
-	if !bytes.Contains(out, []byte("missing-function-2")) {
-		t.Errorf("Missing function call stack should show missing-function-2, got: %s", out)
+	expected := []*stack.Sample{{
+		Funcs: []string{"missing-function-2", "funcName"},
+		Count: 2,
+	}}
+	if !reflect.DeepEqual(out, expected) {
+		t.Errorf("Missing function call stack should contain missing-function-2\n  got %+v\n want %+v", expected, out)
 	}
 }
 

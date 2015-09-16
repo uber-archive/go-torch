@@ -29,6 +29,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/uber/go-torch/stack"
 )
 
 type readState int
@@ -48,30 +50,24 @@ type rawParser struct {
 	// err is the first error encountered by the parser.
 	err error
 
-	state    readState
-	funcName map[funcID]string
-	records  []*stackRecord
+	state     readState
+	funcNames map[funcID]string
+	records   []*stackRecord
 }
 
 // ParseRaw parses the raw pprof output and returns call stacks.
-func ParseRaw(input []byte) ([]byte, error) {
+func ParseRaw(input []byte) ([]*stack.Sample, error) {
 	parser := newRawParser()
 	if err := parser.parse(input); err != nil {
 		return nil, err
 	}
 
-	// TODO(prashantv): Refactor interfaces so we use streams.
-	buf := &bytes.Buffer{}
-	if err := parser.print(buf); err != nil {
-		return nil, err
-	}
-
-	return buf.Bytes(), nil
+	return parser.toSamples(), nil
 }
 
 func newRawParser() *rawParser {
 	return &rawParser{
-		funcName: make(map[funcID]string),
+		funcNames: make(map[funcID]string),
 	}
 }
 
@@ -129,16 +125,30 @@ func (p *rawParser) processLine(line string) {
 	}
 }
 
-// print prints out the stack traces collected from the raw pprof output.
-func (p *rawParser) print(w io.Writer) error {
+// toSamples aggregates stack sample counts and returns a list of unique stack samples.
+func (p *rawParser) toSamples() []*stack.Sample {
+	samples := make(map[string]*stack.Sample)
 	for _, r := range p.records {
-		r.serialize(p.funcName, w)
-		fmt.Fprintln(w)
+		funcNames := r.funcNames(p.funcNames)
+		funcKey := strings.Join(funcNames, ";")
+
+		if sample, ok := samples[funcKey]; ok {
+			sample.Count += r.samples
+			continue
+		}
+
+		samples[funcKey] = &stack.Sample{
+			Funcs: funcNames,
+			Count: r.samples,
+		}
 	}
-	if wc, ok := w.(io.WriteCloser); ok {
-		return wc.Close()
+
+	samplesList := make([]*stack.Sample, 0, len(samples))
+	for _, s := range samples {
+		samplesList = append(samplesList, s)
 	}
-	return nil
+
+	return samplesList
 }
 
 // addLocation parses a location that looks like:
@@ -151,7 +161,7 @@ func (p *rawParser) addLocation(line string) {
 		return
 	}
 	funcID := p.toFuncID(strings.TrimSuffix(parts[0], ":"))
-	p.funcName[funcID] = parts[2]
+	p.funcNames[funcID] = parts[2]
 }
 
 type stackRecord struct {
@@ -188,12 +198,15 @@ func getFunctionName(funcNames map[funcID]string, funcID funcID) string {
 	return fmt.Sprintf("missing-function-%v", funcID)
 }
 
-// serialize serializes a call stack for a given stackRecord given the funcID mapping.
-func (r *stackRecord) serialize(funcNames map[funcID]string, w io.Writer) {
-	for _, funcID := range r.stack {
-		fmt.Fprintln(w, getFunctionName(funcNames, funcID))
+// funcNames returns the function names for this stack sample.
+// It returns in parent first order.
+func (r *stackRecord) funcNames(funcNames map[funcID]string) []string {
+	var names []string
+	for i := len(r.stack) - 1; i >= 0; i-- {
+		funcID := r.stack[i]
+		names = append(names, getFunctionName(funcNames, funcID))
 	}
-	fmt.Fprintln(w, r.samples)
+	return names
 }
 
 // parseInt converts a string to an int. It stores any errors using setError.
