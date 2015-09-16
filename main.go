@@ -76,18 +76,18 @@ func runWithOptions(opts *options) error {
 		return fmt.Errorf("could not parse raw pprof output: %v", err)
 	}
 
+	flameInput, err := renderer.ToFlameInput(callStacks)
+	if err != nil {
+		return fmt.Errorf("could not convert stacks to flamegraph input: %v", err)
+	}
+
 	if opts.Raw {
-		log.Print("Printing raw call graph to stdout")
-		fmt.Printf("%s", callStacks)
+		log.Print("Printing raw flamegraph input to stdout")
+		fmt.Printf("%s", flameInput)
 		return nil
 	}
 
-	collapsedStacks, err := renderer.CollapseStacks(callStacks)
-	if err != nil {
-		return fmt.Errorf("could not collapse stacks: %v", err)
-	}
-
-	flameGraph, err := renderer.GenerateFlameGraph(collapsedStacks)
+	flameGraph, err := renderer.GenerateFlameGraph(flameInput)
 	if err != nil {
 		return fmt.Errorf("could not generate flame graph: %v", err)
 	}

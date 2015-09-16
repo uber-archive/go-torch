@@ -133,13 +133,7 @@ func TestRunFile(t *testing.T) {
 		if err != nil {
 			t.Errorf("Failed to read line 1 in output file: %v", err)
 		}
-		line2, err := reader.ReadString('\n')
-		if err != nil {
-			t.Errorf("Failed to read line 2 in output file: %v", err)
-		}
-
-		if !strings.Contains(line1, "flamegraph.pl") ||
-			!strings.Contains(line2, "stackcollapse.pl") {
+		if !strings.Contains(line1, "flamegraph.pl") {
 			t.Errorf("Output file has not been processed by flame graph scripts")
 		}
 	})
@@ -188,13 +182,9 @@ func withScriptsInPath(t *testing.T, f func()) {
 		echo $0
 		cat
 		`
-		scripts := []string{"stackcollapse.pl", "flamegraph.pl"}
-		scriptContentsBytes := []byte(scriptContents)
-		for _, s := range scripts {
-			scriptFile := filepath.Join(scriptsPath, s)
-			if err := ioutil.WriteFile(scriptFile, scriptContentsBytes, 0777); err != nil {
-				t.Errorf("Failed to create script %v: %v", scriptFile, err)
-			}
+		scriptFile := filepath.Join(scriptsPath, "flamegraph.pl")
+		if err := ioutil.WriteFile(scriptFile, []byte(scriptContents), 0777); err != nil {
+			t.Errorf("Failed to create script %v: %v", scriptFile, err)
 		}
 	}
 
