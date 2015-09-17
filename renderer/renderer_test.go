@@ -18,54 +18,29 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-package graph
+package renderer
 
 import (
-	ggv "github.com/awalterschulze/gographviz"
-	"github.com/stretchr/testify/mock"
+	"reflect"
+	"testing"
+
+	"github.com/uber/go-torch/stack"
 )
 
-type mockSearcher struct {
-	mock.Mock
-}
+func TestToFlameInput(t *testing.T) {
+	samples := []*stack.Sample{
+		{Funcs: []string{"func1", "func2"}, Count: 10},
+		{Funcs: []string{"func3"}, Count: 8},
+		{Funcs: []string{"func4", "func5", "func6"}, Count: 3},
+	}
+	expected := "func1;func2 10\nfunc3 8\nfunc4;func5;func6 3\n"
 
-func (m *mockSearcher) dfs(args searchArgs) {
-	m.Called(args)
-}
-
-type mockCollectionGetter struct {
-	mock.Mock
-}
-
-func (m *mockCollectionGetter) generateNodeToOutEdges(_a0 *ggv.Graph) map[string][]*ggv.Edge {
-	ret := m.Called(_a0)
-
-	var r0 map[string][]*ggv.Edge
-	if ret.Get(0) != nil {
-		r0 = ret.Get(0).(map[string][]*ggv.Edge)
+	out, err := ToFlameInput(samples)
+	if err != nil {
+		t.Fatalf("ToFlameInput failed: %v", err)
 	}
 
-	return r0
-}
-func (m *mockCollectionGetter) getInDegreeZeroNodes(_a0 *ggv.Graph) []string {
-	ret := m.Called(_a0)
-
-	var r0 []string
-	if ret.Get(0) != nil {
-		r0 = ret.Get(0).([]string)
+	if !reflect.DeepEqual(expected, string(out)) {
+		t.Errorf("ToFlameInput failed:\n  got %s\n want %s", out, expected)
 	}
-
-	return r0
-}
-
-type mockPathStringer struct {
-	mock.Mock
-}
-
-func (m *mockPathStringer) pathAsString(_a0 []ggv.Edge, _a1 map[string]*ggv.Node) string {
-	ret := m.Called(_a0, _a1)
-
-	r0 := ret.Get(0).(string)
-
-	return r0
 }
