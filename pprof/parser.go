@@ -156,12 +156,16 @@ func (p *rawParser) toSamples() []*stack.Sample {
 // and creates a mapping from funcID to function name.
 func (p *rawParser) addLocation(line string) {
 	parts := splitBySpace(line)
-	if len(parts) < 3 {
+	if len(parts) < 4 {
 		p.setError(fmt.Errorf("malformed location line: %v", line))
 		return
 	}
 	funcID := p.toFuncID(strings.TrimSuffix(parts[0], ":"))
-	p.funcNames[funcID] = parts[2]
+	if strings.HasPrefix(parts[2], "M=") {
+		p.funcNames[funcID] = parts[3]
+	} else {
+		p.funcNames[funcID] = parts[2]
+	}
 }
 
 type stackRecord struct {

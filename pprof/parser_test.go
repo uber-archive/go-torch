@@ -27,13 +27,14 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/uber/go-torch/stack"
 )
 
-func parseTestRawData(t *testing.T) ([]byte, *rawParser) {
-	rawBytes, err := ioutil.ReadFile("testdata/pprof.raw.txt")
+func parseTestRawData(t *testing.T, file string) ([]byte, *rawParser) {
+	rawBytes, err := ioutil.ReadFile(file)
 	if err != nil {
-		t.Fatalf("Failed to read testdata/pprof.raw.txt: %v", err)
+		t.Fatalf("Failed to read %v: %v", file, err)
 	}
 
 	parser := newRawParser()
@@ -44,8 +45,12 @@ func parseTestRawData(t *testing.T) ([]byte, *rawParser) {
 	return rawBytes, parser
 }
 
+func parseTest1(t *testing.T) ([]byte, *rawParser) {
+	return parseTestRawData(t, "testdata/pprof.raw.txt")
+}
+
 func TestParse(t *testing.T) {
-	_, parser := parseTestRawData(t)
+	_, parser := parseTest1(t)
 
 	// line 7 - 249 are stack records in the test file.
 	const expectedNumRecords = 242
@@ -82,8 +87,13 @@ func TestParse(t *testing.T) {
 	}
 }
 
+func TestParseWithM(t *testing.T) {
+	_, parser := parseTestRawData(t, "testdata/pprof2.raw.txt")
+	assert.Equal(t, "runtime.scanobject", parser.funcNames[1], "location with with m=1 failed")
+}
+
 func TestParseRawValid(t *testing.T) {
-	rawBytes, _ := parseTestRawData(t)
+	rawBytes, _ := parseTest1(t)
 	got, err := ParseRaw(rawBytes)
 	if err != nil {
 		t.Fatalf("ParseRaw failed: %v", err)
