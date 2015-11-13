@@ -51,8 +51,7 @@ func GetRaw(opts Options) ([]byte, error) {
 
 // getArgs gets the arguments to run pprof with for a given set of Options.
 func getArgs(opts Options) ([]string, error) {
-	var pprofArgs []string
-	pprofArgs = append(pprofArgs, opts.ExtraArgs...)
+	pprofArgs := opts.ExtraArgs
 	if opts.BinaryFile != "" {
 		if opts.BinaryName != "" {
 			pprofArgs = append(pprofArgs, opts.BinaryName)
