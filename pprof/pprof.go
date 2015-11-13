@@ -23,17 +23,20 @@ package pprof
 import (
 	"bytes"
 	"fmt"
+	"log"
 	"net/url"
 	"os/exec"
+	"strings"
 )
 
 // Options are parameters for pprof.
 type Options struct {
-	BaseURL     string `short:"u" long:"url" default:"http://localhost:8080" description:"Base URL of your Go program"`
-	URLSuffix   string `short:"s" long:"suffix" default:"/debug/pprof/profile" description:"URL path of pprof profile"`
-	BinaryFile  string `short:"b" long:"binaryinput" description:"file path of previously saved binary profile. (binary profile is anything accepted by https://golang.org/cmd/pprof)"`
-	BinaryName  string `long:"binaryname" description:"file path of the binary that the binaryinput is for, used for pprof inputs"`
-	TimeSeconds int    `short:"t" long:"time" default:"30" description:"Duration to profile for"`
+	BaseURL     string   `short:"u" long:"url" default:"http://localhost:8080" description:"Base URL of your Go program"`
+	URLSuffix   string   `short:"s" long:"suffix" default:"/debug/pprof/profile" description:"URL path of pprof profile"`
+	BinaryFile  string   `short:"b" long:"binaryinput" description:"File path of previously saved binary profile. (binary profile is anything accepted by https://golang.org/cmd/pprof)"`
+	BinaryName  string   `long:"binaryname" description:"File path of the binary that the binaryinput is for, used for pprof inputs"`
+	TimeSeconds int      `short:"t" long:"time" default:"30" description:"Duration to profile for"`
+	ExtraArgs   []string `long:"pprofArgs"  description:"Extra arguments for pprof"`
 }
 
 // GetRaw returns the raw output from pprof for the given options.
@@ -49,6 +52,7 @@ func GetRaw(opts Options) ([]byte, error) {
 // getArgs gets the arguments to run pprof with for a given set of Options.
 func getArgs(opts Options) ([]string, error) {
 	var pprofArgs []string
+	pprofArgs = append(pprofArgs, opts.ExtraArgs...)
 	if opts.BinaryFile != "" {
 		if opts.BinaryName != "" {
 			pprofArgs = append(pprofArgs, opts.BinaryName)
@@ -72,6 +76,7 @@ func runPProf(args ...string) ([]byte, error) {
 	allArgs = append(allArgs, args...)
 
 	var buf bytes.Buffer
+	log.Printf("Run pprof command: go %v", strings.Join(allArgs, " "))
 	cmd := exec.Command("go", allArgs...)
 	cmd.Stderr = &buf
 	out, err := cmd.Output()
