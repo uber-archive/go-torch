@@ -28,7 +28,6 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/uber/go-torch/stack"
 )
@@ -169,9 +168,9 @@ func (p *rawParser) addLocation(line string) {
 }
 
 type stackRecord struct {
-	samples  int
-	duration time.Duration
-	stack    []funcID
+	samples int64
+	total   int64
+	stack   []funcID
 }
 
 // addSample parses a sample that looks like:
@@ -180,14 +179,19 @@ type stackRecord struct {
 func (p *rawParser) addSample(line string) {
 	// Parse a sample which looks like:
 	parts := splitBySpace(line)
+	if strings.HasPrefix(parts[0], "bytes:[") {
+		// Memory profiles have a line line bytes:[size1] which says the size of the object.
+		// Skip these lines.
+		return
+	}
 	if len(parts) < 3 {
 		p.setError(fmt.Errorf("malformed sample line: %v", line))
 		return
 	}
 
 	record := &stackRecord{
-		samples:  p.parseInt(parts[0]),
-		duration: time.Duration(p.parseInt(strings.TrimSuffix(parts[1], ":"))),
+		samples: p.parseInt(parts[0]),
+		total:   p.parseInt(strings.TrimSuffix(parts[1], ":")),
 	}
 	for _, fIDStr := range parts[2:] {
 		record.stack = append(record.stack, p.toFuncID(fIDStr))
@@ -213,9 +217,9 @@ func (r *stackRecord) funcNames(funcNames map[funcID]string) []string {
 	return names
 }
 
-// parseInt converts a string to an int. It stores any errors using setError.
-func (p *rawParser) parseInt(s string) int {
-	v, err := strconv.Atoi(s)
+// parseInt converts a string to an int64. It stores any errors using setError.
+func (p *rawParser) parseInt(s string) int64 {
+	v, err := strconv.ParseInt(s, 10, 64)
 	if err != nil {
 		p.setError(err)
 		return 0

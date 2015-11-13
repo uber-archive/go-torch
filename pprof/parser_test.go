@@ -25,7 +25,6 @@ import (
 	"reflect"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/uber/go-torch/stack"
@@ -49,6 +48,10 @@ func parseTest1(t *testing.T) ([]byte, *rawParser) {
 	return parseTestRawData(t, "testdata/pprof.raw.txt")
 }
 
+func TestParseMemProfile(t *testing.T) {
+	parseTestRawData(t, "testdata/pprof3.raw.txt")
+}
+
 func TestParse(t *testing.T) {
 	_, parser := parseTest1(t)
 
@@ -59,9 +62,9 @@ func TestParse(t *testing.T) {
 			len(parser.records), expectedNumRecords)
 	}
 	expectedRecords := map[int]*stackRecord{
-		0:  &stackRecord{1, time.Duration(10000000), []funcID{1, 2, 2, 2, 3, 3, 2, 2, 3, 3, 2, 2, 2, 3, 3, 3, 2, 3, 2, 3, 2, 2, 3, 2, 2, 3, 4, 5, 6}},
-		18: &stackRecord{1, time.Duration(10000000), []funcID{14, 2, 2, 3, 2, 2, 3, 2, 2, 3, 3, 3, 2, 2, 2, 3, 3, 2, 3, 3, 3, 3, 3, 2, 4, 5, 6}},
-		45: &stackRecord{12, time.Duration(120000000), []funcID{23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34}},
+		0:  &stackRecord{1, 10000000, []funcID{1, 2, 2, 2, 3, 3, 2, 2, 3, 3, 2, 2, 2, 3, 3, 3, 2, 3, 2, 3, 2, 2, 3, 2, 2, 3, 4, 5, 6}},
+		18: &stackRecord{1, 10000000, []funcID{14, 2, 2, 3, 2, 2, 3, 2, 2, 3, 3, 3, 2, 2, 2, 3, 3, 2, 3, 3, 3, 3, 3, 2, 4, 5, 6}},
+		45: &stackRecord{12, 120000000, []funcID{23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34}},
 	}
 	for recordNum, expected := range expectedRecords {
 		if got := parser.records[recordNum]; !reflect.DeepEqual(got, expected) {
