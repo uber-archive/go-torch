@@ -24,5 +24,5 @@ package stack
 type Sample struct {
 	// Funcs is parent first.
 	Funcs []string
-	Count int
+	Count int64
 }

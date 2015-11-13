@@ -61,7 +61,8 @@ func TestGetArgs(t *testing.T) {
 				BinaryFile:  "/path/to/binaryfile",
 				BaseURL:     "http://localhost:1234",
 				URLSuffix:   "/profile",
-				TimeSeconds: 5},
+				TimeSeconds: 5,
+			},
 			expected: []string{"/path/to/binaryfile"},
 		},
 		{
@@ -70,8 +71,16 @@ func TestGetArgs(t *testing.T) {
 				BinaryName:  "/path/to/binaryname",
 				BaseURL:     "http://localhost:1234",
 				URLSuffix:   "/profile",
-				TimeSeconds: 5},
+				TimeSeconds: 5,
+			},
 			expected: []string{"/path/to/binaryname", "/path/to/binaryfile"},
+		},
+		{
+			opts: Options{
+				BinaryFile: "/path/to/binaryfile",
+				ExtraArgs:  []string{"-arg1", "-arg2"},
+			},
+			expected: []string{"-arg1", "-arg2", "/path/to/binaryfile"},
 		},
 		{
 			opts: Options{
