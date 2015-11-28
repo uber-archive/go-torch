@@ -34,6 +34,7 @@ GLOBAL OPTIONS:
    --file, -f "torch.svg"     ouput file name (must be .svg)
    --print, -p          print the generated svg to stdout instead of writing to file
    --raw, -r            print the raw call graph output to stdout instead of creating a flame graph; use with Brendan Gregg's flame graph perl script (see https://github.com/brendangregg/FlameGraph)
+   --load, -l           load the raw data from a file instead of running the profiler
    --help, -h           show help
    --version, -v        print the version
 ```
@@ -74,6 +75,16 @@ $ go test -cpuprofile=cpu.pprof
 # This creates a cpu.pprof file, and the golang.test binary.
 $ go-torch --binaryinput cpu.pprof --binaryname golang.test
 INFO[0000] Profiling ...
+INFO[0000] flame graph has been created as torch.svg
+```
+
+### Load profile data from file Example
+
+
+```
+# Run pprof and pipe its output to a file.
+$ go tool pprof -raw -seconds 20 http://159.203.121.30:2376/debug/pprof/profile > results.raw
+$ go-torch --load results.raw --file torch.svg
 INFO[0000] flame graph has been created as torch.svg
 ```
 
