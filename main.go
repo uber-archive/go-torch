@@ -41,6 +41,7 @@ type options struct {
 	File         string `short:"f" long:"file" default:"torch.svg" description:"Output file name (must be .svg)"`
 	Print        bool   `short:"p" long:"print" description:"Print the generated svg to stdout instead of writing to file"`
 	Raw          bool   `short:"r" long:"raw" description:"Print the raw call graph output to stdout instead of creating a flame graph; use with Brendan Gregg's flame graph perl script (see https://github.com/brendangregg/FlameGraph)"`
+	Load         string `short:"l" long:"load" description:"Load the raw data from a file instead of running the profiler"`
 }
 
 // main is the entry point of the application
@@ -67,9 +68,9 @@ func runWithArgs(args ...string) error {
 }
 
 func runWithOptions(opts *options) error {
-	pprofRawOutput, err := pprof.GetRaw(opts.PProfOptions)
+	pprofRawOutput, err := getPprofOutput(opts)
 	if err != nil {
-		return fmt.Errorf("could not get raw output from pprof: %v", err)
+		return err
 	}
 
 	callStacks, err := pprof.ParseRaw(pprofRawOutput)
@@ -115,4 +116,20 @@ func validateOptions(opts *options) error {
 		return fmt.Errorf("seconds must be an integer greater than 0")
 	}
 	return nil
+}
+
+func getPprofOutput(opts *options) ([]byte, error) {
+	if opts.Load == "" {
+		pprofRawOutput, err := pprof.GetRaw(opts.PProfOptions)
+		if err != nil {
+			return nil, fmt.Errorf("could not get raw output from pprof: %v", err)
+		}
+		return pprofRawOutput, nil
+	} else {
+		pprofRawOutput, err := ioutil.ReadFile(opts.Load)
+		if err != nil {
+			return nil, fmt.Errorf("could not get raw output from file %s: %v", opts.Load, err)
+		}
+		return pprofRawOutput, nil
+	}
 }
