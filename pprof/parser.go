@@ -156,7 +156,10 @@ func (p *rawParser) toSamples() []*stack.Sample {
 func (p *rawParser) addLocation(line string) {
 	parts := splitBySpace(line)
 	if len(parts) < 4 {
-		p.setError(fmt.Errorf("malformed location line: %v", line))
+		// Do not error when there is only id and address in the line.
+		if len(parts) != 2 {
+			p.setError(fmt.Errorf("malformed location line: %v", line))
+		}
 		return
 	}
 	funcID := p.toFuncID(strings.TrimSuffix(parts[0], ":"))
