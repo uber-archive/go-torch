@@ -41,6 +41,7 @@ type options struct {
 	File         string `short:"f" long:"file" default:"torch.svg" description:"Output file name (must be .svg)"`
 	Print        bool   `short:"p" long:"print" description:"Print the generated svg to stdout instead of writing to file"`
 	Raw          bool   `short:"r" long:"raw" description:"Print the raw call graph output to stdout instead of creating a flame graph; use with Brendan Gregg's flame graph perl script (see https://github.com/brendangregg/FlameGraph)"`
+	Title        string `long:"title" default:"Flame Graph" description:"Graph title to display in the output file"`
 }
 
 // main is the entry point of the application
@@ -88,7 +89,7 @@ func runWithOptions(opts *options) error {
 		return nil
 	}
 
-	flameGraph, err := renderer.GenerateFlameGraph(flameInput)
+	flameGraph, err := renderer.GenerateFlameGraph(flameInput, "--title", opts.Title)
 	if err != nil {
 		return fmt.Errorf("could not generate flame graph: %v", err)
 	}

@@ -57,7 +57,7 @@ func runScript(scriptName string, args []string, inData []byte) ([]byte, error) 
 }
 
 // CollapseStacks runs the flamegraph's collapse stacks script.
-func CollapseStacks(stacks []byte) ([]byte, error) {
+func CollapseStacks(stacks []byte, args ...string) ([]byte, error) {
 	stackCollapse := findInPath(stackCollapseScripts)
 	if stackCollapse == "" {
 		return nil, errNoPerlScript
@@ -67,11 +67,11 @@ func CollapseStacks(stacks []byte) ([]byte, error) {
 }
 
 // GenerateFlameGraph runs the flamegraph script to generate a flame graph SVG.
-func GenerateFlameGraph(graphInput []byte) ([]byte, error) {
+func GenerateFlameGraph(graphInput []byte, args ...string) ([]byte, error) {
 	flameGraph := findInPath(flameGraphScripts)
 	if flameGraph == "" {
 		return nil, errNoPerlScript
 	}
 
-	return runScript(flameGraph, nil, graphInput)
+	return runScript(flameGraph, args, graphInput)
 }

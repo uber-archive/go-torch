@@ -34,6 +34,7 @@ GLOBAL OPTIONS:
    --file, -f "torch.svg"     ouput file name (must be .svg)
    --print, -p          print the generated svg to stdout instead of writing to file
    --raw, -r            print the raw call graph output to stdout instead of creating a flame graph; use with Brendan Gregg's flame graph perl script (see https://github.com/brendangregg/FlameGraph)
+   --title              graph title to display in the output file
    --help, -h           show help
    --version, -v        print the version
 ```

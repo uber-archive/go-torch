@@ -88,7 +88,7 @@ func TestRunScriptNoInput(t *testing.T) {
 	}
 }
 
-type scriptFn func([]byte) ([]byte, error)
+type scriptFn func(input []byte, args ...string) ([]byte, error)
 
 func testScriptFound(t *testing.T, sliceToStub []string, f scriptFn) {
 	// Stub out the scripts that it looks at for the test
