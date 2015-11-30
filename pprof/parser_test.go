@@ -128,6 +128,28 @@ func TestParseMissingLocation(t *testing.T) {
 	}
 }
 
+func TestParseMissingSourceLine(t *testing.T) {
+	contents := `Samples:
+	samples/count cpu/nanoseconds
+	   2   10000000: 1 2
+	Locations:
+	   1: 0xaaaaa funcName :0 s=0
+	   2: 0xaaaab
+`
+	out, err := ParseRaw([]byte(contents))
+	if err != nil {
+		t.Fatalf("Missing location should not cause an error, got %v", err)
+	}
+
+	expected := []*stack.Sample{{
+		Funcs: []string{"missing-function-2", "funcName"},
+		Count: 2,
+	}}
+	if !reflect.DeepEqual(out, expected) {
+		t.Errorf("Missing function call stack should contain missing-function-2\n  got %+v\n want %+v", expected, out)
+	}
+}
+
 func testParseRawBad(t *testing.T, errorReason, errorSubstr, contents string) {
 	_, err := ParseRaw([]byte(contents))
 	if err == nil {
