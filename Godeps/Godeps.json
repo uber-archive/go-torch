@@ -10,6 +10,11 @@
 			"Rev": "5215b55f46b2b919f50a1df0eaa5886afe4e3b3d"
 		},
 		{
+			"ImportPath": "github.com/fatih/color",
+			"Comment": "v0.1-12-g9aae6aa",
+			"Rev": "9aae6aaa22315390f03959adca2c4d395b02fcef"
+		},
+		{
 			"ImportPath": "github.com/jessevdk/go-flags",
 			"Comment": "v1-297-g1b89bf7",
 			"Rev": "1b89bf73cd2c3a911d7b2a279ab085c4a18cf539"
@@ -22,6 +27,14 @@
 			"ImportPath": "github.com/stretchr/testify/assert",
 			"Comment": "v1.0-88-ge3a8ff8",
 			"Rev": "e3a8ff8ce36581f87a15341206f205b1da467059"
+		},
+		{
+			"ImportPath": "github.com/mattn/go-colorable",
+			"Rev": "3dac7b4f76f6e17fb39b768b89e3783d16e237fe"
+		},
+		{
+			"ImportPath": "github.com/mattn/go-isatty",
+			"Rev": "56b76bdf51f7708750eac80fa38b952bb9f32639"
 		}
 	]
 }
