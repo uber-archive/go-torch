@@ -27,7 +27,7 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/uber/go-torch/torchLog"
+	"github.com/uber/go-torch/torchlog"
 )
 
 // Options are parameters for pprof.
@@ -76,7 +76,7 @@ func runPProf(args ...string) ([]byte, error) {
 	allArgs = append(allArgs, args...)
 
 	var buf bytes.Buffer
-	torchLog.Printf("Run pprof command: go %v", strings.Join(allArgs, " "))
+	torchlog.Printf("Run pprof command: go %v", strings.Join(allArgs, " "))
 	cmd := exec.Command("go", allArgs...)
 	cmd.Stderr = &buf
 	out, err := cmd.Output()
