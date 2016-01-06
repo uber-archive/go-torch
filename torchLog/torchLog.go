@@ -28,30 +28,36 @@ import (
 	"github.com/fatih/color"
 )
 
-var toRedString = color.New(color.FgRed).SprintFunc()
-var toBlueString = color.New(color.FgBlue).SprintFunc()
+var (
+	redColor  = color.New(color.FgRed)
+	blueColor = color.New(color.FgBlue)
+)
 
 func init() {
 	log.SetFlags(0) // disable default flags
 }
 
+// getPrefix generates the log prefix in the given color
+func getPrefix(level string, color *color.Color) string {
+	currentTime := time.Now().Format("15:04:05")
+	toColoredString := color.SprintFunc()
+	return toColoredString(fmt.Sprintf("%s[%s]", level, currentTime))
+}
+
 // Fatalf wraps log.Fatalf and adds the current time and color.
 func Fatalf(format string, v ...interface{}) {
-	currentTime := time.Now().Format("15:04:05")
-	prefix := toRedString(fmt.Sprintf("FATA[%s] ", currentTime))
+	prefix := getPrefix("FATA", redColor)
 	log.Fatalf(prefix+format, v...)
 }
 
 // Printf wraps log.Printf and adds the current time and color.
 func Printf(format string, v ...interface{}) {
-	currentTime := time.Now().Format("15:04:05")
-	prefix := toBlueString(fmt.Sprintf("INFO[%s] ", currentTime))
+	prefix := getPrefix("INFO", blueColor)
 	log.Printf(prefix+format, v...)
 }
 
 // Print wraps log.Print and adds the current time and color.
 func Print(v ...interface{}) {
-	currentTime := time.Now().Format("15:04:05")
-	prefix := toBlueString(fmt.Sprintf("INFO[%s] ", currentTime))
+	prefix := getPrefix("INFO", blueColor)
 	log.Print(prefix + fmt.Sprint(v...))
 }
