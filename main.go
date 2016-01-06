@@ -84,7 +84,7 @@ func runWithOptions(opts *options) error {
 
 	if opts.Raw {
 		torchlog.Print("Printing raw flamegraph input to stdout")
-		fmt.Printf("%s", flameInput)
+		fmt.Printf("%s\n", flameInput)
 		return nil
 	}
 
@@ -95,7 +95,7 @@ func runWithOptions(opts *options) error {
 
 	if opts.Print {
 		torchlog.Print("Printing svg to stdout")
-		fmt.Printf("%s", flameGraph)
+		fmt.Printf("%s\n", flameGraph)
 		return nil
 	}
 
