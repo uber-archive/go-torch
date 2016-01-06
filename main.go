@@ -25,12 +25,12 @@ package main
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"strings"
 
 	"github.com/uber/go-torch/pprof"
 	"github.com/uber/go-torch/renderer"
+	"github.com/uber/go-torch/torchlog"
 
 	gflags "github.com/jessevdk/go-flags"
 )
@@ -46,9 +46,8 @@ type options struct {
 
 // main is the entry point of the application
 func main() {
-	log.SetFlags(log.Ltime)
 	if err := runWithArgs(os.Args...); err != nil {
-		log.Fatalf("Failed: %v", err)
+		torchlog.Fatalf("Failed: %v", err)
 	}
 }
 
@@ -84,8 +83,8 @@ func runWithOptions(opts *options) error {
 	}
 
 	if opts.Raw {
-		log.Print("Printing raw flamegraph input to stdout")
-		fmt.Printf("%s", flameInput)
+		torchlog.Print("Printing raw flamegraph input to stdout")
+		fmt.Printf("%s\n", flameInput)
 		return nil
 	}
 
@@ -95,12 +94,12 @@ func runWithOptions(opts *options) error {
 	}
 
 	if opts.Print {
-		log.Print("Printing svg to stdout")
-		fmt.Printf("%s", flameGraph)
+		torchlog.Print("Printing svg to stdout")
+		fmt.Printf("%s\n", flameGraph)
 		return nil
 	}
 
-	log.Printf("Writing svg to %v", opts.File)
+	torchlog.Printf("Writing svg to %v", opts.File)
 	if err := ioutil.WriteFile(opts.File, flameGraph, 0666); err != nil {
 		return fmt.Errorf("could not write output file: %v", err)
 	}
