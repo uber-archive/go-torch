@@ -34,7 +34,7 @@ var errNoPerlScript = errors.New("Cannot find flamegraph scripts in the PATH or 
 
 var (
 	stackCollapseScripts = []string{"stackcollapse.pl", "./stackcollapse.pl", "./FlameGraph/stackcollapse.pl"}
-	flameGraphScripts    = []string{"flamegraph.pl", "./flamegraph.pl", "./FlameGraph/flamegraph.pl", "flame-graph-gen"}
+	flameGraphScripts    = []string{"flamegraph", "flamegraph.pl", "./flamegraph.pl", "./FlameGraph/flamegraph.pl", "flame-graph-gen"}
 )
 
 // findInPath returns the first path that is found in PATH.
