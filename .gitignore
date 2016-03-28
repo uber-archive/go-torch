@@ -7,3 +7,4 @@ go-torch
 *.tmp
 
 Godeps/_workspace
+vendor

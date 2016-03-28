@@ -1,0 +1,4 @@
+package: github.com/uber/go-torch
+import:
+- package: github.com/fatih/color
+- package: github.com/jessevdk/go-flags
