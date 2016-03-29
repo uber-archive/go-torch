@@ -84,11 +84,16 @@ INFO[0000] flame graph has been created as torch.svg
 $ go get github.com/uber/go-torch
 ```
 
+You can also use go-torch using docker:
+```
+$ docker run uber/go-torch -h
+```
+
 ### Install the Go dependencies:
 
 ```
-$ go get github.com/tools/godep
-$ godep restore
+$ go get github.com/Masterminds/glide
+$ glide install
 ```
 
 ### Get the flame graph script:

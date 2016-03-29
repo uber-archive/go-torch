@@ -1,18 +1,22 @@
 #!/bin/bash
 
+set -x
+
+export GO15VENDOREXPERIMENT=1
+
 echo "mode: set" > acc.out
 FAIL=0
 
-# Standard go tooling behavior is to ignore dirs with leading underscors
-for dir in $(find . -maxdepth 10 -not -path './.git*' -not -path '*/_*' -type d);
+# List all packages to run tests for
+PACKAGES=$(glide novendor)
+go test -i $PACKAGES
+for dir in $PACKAGES;
 do
-  if ls $dir/*.go &> /dev/null; then
-    go test -coverprofile=profile.out $dir || FAIL=$?
-    if [ -f profile.out ]
-    then
-      cat profile.out | grep -v "mode: set" | grep -v "mocks.go" >> acc.out
-      rm profile.out
-    fi
+  go test -coverprofile=profile.out $dir || FAIL=$?
+  if [ -f profile.out ]
+  then
+    cat profile.out | grep -v "mode: set" | grep -v "mocks.go" >> acc.out
+    rm profile.out
   fi
 done
 

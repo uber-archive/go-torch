@@ -1,14 +1,16 @@
 ---
 language: go
 
+# 1.4 will probably work, but we don't test it since we use vendor.
 go:
-  - 1.4
+  - 1.5
+  - 1.6
   - tip
 
-before_install:
-  - go get -u github.com/axw/gocov/gocov
+install:
+  - go get github.com/Masterminds/glide
   - go get -u github.com/mattn/goveralls
-  - go get golang.org/x/tools/cmd/cover
+  - glide install
 
 script:
   - ./.test-cover.sh
