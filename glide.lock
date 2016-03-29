@@ -1,5 +1,5 @@
-hash: f20d8c32baab3162ebad5e357e6877b99ebeb8730b03e78aaa6f41d5b1f22057
-updated: 2016-03-28T19:39:38.035209228-04:00
+hash: b242f7d839e91092957e62d5debf0d1217aa491911cc064a022d142640ec346f
+updated: 2016-03-28T18:27:44.307463068-07:00
 imports:
 - name: github.com/fatih/color
   version: 533cd7fd8a85905f67a1753afb4deddc85ea174f
@@ -11,6 +11,8 @@ imports:
 - name: github.com/mattn/go-isatty
   version: 56b76bdf51f7708750eac80fa38b952bb9f32639
   repo: https://github.com/mattn/go-isatty
+- name: github.com/stretchr/testify
+  version: 6fe211e493929a8aac0469b93f28b1d0688a9a3a
 - name: golang.org/x/sys
   version: 320cb01ddbbf0473674c2585f9b6e245721de355
   subpackages:
