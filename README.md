@@ -86,8 +86,11 @@ $ go get github.com/uber/go-torch
 
 You can also use go-torch using docker:
 ```
-$ docker run uber/go-torch -h
+$ docker run uber/go-torch -u http://[address-of-host] -p > torch.svg
 ```
+
+Using `-p` will print the SVG to standard out, which can then be redirected
+to a file. This avoids mounting volumes to a container.
 
 ### Install the Go dependencies:
 
