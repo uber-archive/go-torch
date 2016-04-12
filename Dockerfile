@@ -3,6 +3,7 @@ FROM golang:1.6-alpine
 ENV PATH $PATH:/opt/flamegraph
 
 RUN apk --update add git && \
+    apk add perl && \
     curl -OL https://github.com/Masterminds/glide/releases/download/0.10.1/glide-0.10.1-linux-amd64.tar.gz && \
     tar -xzf glide-0.10.1-linux-amd64.tar.gz && \
     mv linux-amd64/glide /usr/bin && \
