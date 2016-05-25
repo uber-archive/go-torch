@@ -60,7 +60,13 @@ func TestBadArgs(t *testing.T) {
 }
 
 func TestMain(t *testing.T) {
-	os.Args = []string{"--raw", "--binaryinput", testPProfInputFile}
+	os.Args = []string{"go-torch", "--raw", "--binaryinput", testPProfInputFile}
+	main()
+	// Test should not fatal.
+}
+
+func TestMainRemaining(t *testing.T) {
+	os.Args = []string{"go-torch", "--raw", testPProfInputFile}
 	main()
 	// Test should not fatal.
 }
@@ -97,7 +103,7 @@ func TestRunRaw(t *testing.T) {
 	opts := getDefaultOptions()
 	opts.Raw = true
 
-	if err := runWithOptions(opts); err != nil {
+	if err := runWithOptions(opts, nil); err != nil {
 		t.Fatalf("Run with Raw failed: %v", err)
 	}
 }
@@ -117,7 +123,7 @@ func TestRunFile(t *testing.T) {
 	opts.File = getTempFilename(t, ".svg")
 
 	withScriptsInPath(t, func() {
-		if err := runWithOptions(opts); err != nil {
+		if err := runWithOptions(opts, nil); err != nil {
 			t.Fatalf("Run with Print failed: %v", err)
 		}
 
@@ -144,7 +150,7 @@ func TestRunBadFile(t *testing.T) {
 	opts.File = "/dev/zero/invalid/file"
 
 	withScriptsInPath(t, func() {
-		if err := runWithOptions(opts); err == nil {
+		if err := runWithOptions(opts, nil); err == nil {
 			t.Fatalf("Run with bad file expected to fail")
 		}
 	})
@@ -155,7 +161,7 @@ func TestRunPrint(t *testing.T) {
 	opts.Print = true
 
 	withScriptsInPath(t, func() {
-		if err := runWithOptions(opts); err != nil {
+		if err := runWithOptions(opts, nil); err != nil {
 			t.Fatalf("Run with Print failed: %v", err)
 		}
 		// TODO(prashantv): Verify that output is printed to stdout.

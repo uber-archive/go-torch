@@ -36,13 +36,14 @@ type Options struct {
 	URLSuffix   string   `short:"s" long:"suffix" default:"/debug/pprof/profile" description:"URL path of pprof profile"`
 	BinaryFile  string   `short:"b" long:"binaryinput" description:"File path of previously saved binary profile. (binary profile is anything accepted by https://golang.org/cmd/pprof)"`
 	BinaryName  string   `long:"binaryname" description:"File path of the binary that the binaryinput is for, used for pprof inputs"`
-	TimeSeconds int      `short:"t" long:"time" default:"30" description:"Duration to profile for"`
+	TimeSeconds int      `short:"t" long:"seconds" default:"30" description:"Number of seconds to profile for"`
 	ExtraArgs   []string `long:"pprofArgs"  description:"Extra arguments for pprof"`
+	TimeAlias   *int     `hidden:"true" long:"time" description:"Alias for backwards compatibility"`
 }
 
 // GetRaw returns the raw output from pprof for the given options.
-func GetRaw(opts Options) ([]byte, error) {
-	args, err := getArgs(opts)
+func GetRaw(opts Options, remaining []string) ([]byte, error) {
+	args, err := getArgs(opts, remaining)
 	if err != nil {
 		return nil, err
 	}
@@ -51,7 +52,19 @@ func GetRaw(opts Options) ([]byte, error) {
 }
 
 // getArgs gets the arguments to run pprof with for a given set of Options.
-func getArgs(opts Options) ([]string, error) {
+func getArgs(opts Options, remaining []string) ([]string, error) {
+	if opts.TimeAlias != nil {
+		opts.TimeSeconds = *opts.TimeAlias
+	}
+	if len(remaining) > 0 {
+		var pprofArgs []string
+		if opts.TimeSeconds > 0 {
+			pprofArgs = append(pprofArgs, "-seconds", fmt.Sprint(opts.TimeSeconds))
+		}
+		pprofArgs = append(pprofArgs, remaining...)
+		return pprofArgs, nil
+	}
+
 	pprofArgs := opts.ExtraArgs
 	if opts.BinaryFile != "" {
 		if opts.BinaryName != "" {

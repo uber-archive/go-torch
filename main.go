@@ -53,7 +53,9 @@ func main() {
 
 func runWithArgs(args ...string) error {
 	opts := &options{}
-	if _, err := gflags.ParseArgs(opts, args); err != nil {
+
+	remaining, err := gflags.ParseArgs(opts, args)
+	if err != nil {
 		if flagErr, ok := err.(*gflags.Error); ok && flagErr.Type == gflags.ErrHelp {
 			os.Exit(0)
 		}
@@ -63,11 +65,15 @@ func runWithArgs(args ...string) error {
 		return fmt.Errorf("invalid options: %v", err)
 	}
 
-	return runWithOptions(opts)
+	// If there are remaining arguments, the first argument is the binary name.
+	if len(remaining) > 0 {
+		remaining = remaining[1:]
+	}
+	return runWithOptions(opts, remaining)
 }
 
-func runWithOptions(opts *options) error {
-	pprofRawOutput, err := pprof.GetRaw(opts.PProfOptions)
+func runWithOptions(opts *options, remaining []string) error {
+	pprofRawOutput, err := pprof.GetRaw(opts.PProfOptions, remaining)
 	if err != nil {
 		return fmt.Errorf("could not get raw output from pprof: %v", err)
 	}
