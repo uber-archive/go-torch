@@ -22,15 +22,19 @@ package pprof
 
 import (
 	"bytes"
+	"net/http"
+	"net/http/httptest"
 	"reflect"
 	"testing"
 )
 
 func TestGetArgs(t *testing.T) {
+	four := 4
 	tests := []struct {
-		opts     Options
-		expected []string
-		wantErr  bool
+		opts      Options
+		remaining []string
+		expected  []string
+		wantErr   bool
 	}{
 		{
 			opts: Options{
@@ -47,6 +51,14 @@ func TestGetArgs(t *testing.T) {
 				TimeSeconds: 5,
 			},
 			expected: []string{"-seconds", "5", "http://localhost:1234/path/to/profile"},
+		},
+		{
+			opts: Options{
+				BaseURL:   "http://localhost:1234/",
+				URLSuffix: "/path/to/profile",
+				TimeAlias: &four,
+			},
+			expected: []string{"-seconds", "4", "http://localhost:1234/path/to/profile"},
 		},
 		{
 			opts: Options{
@@ -90,10 +102,32 @@ func TestGetArgs(t *testing.T) {
 			},
 			wantErr: true,
 		},
+		{
+			remaining: []string{"binary", "input"},
+			expected:  []string{"binary", "input"},
+		},
+		{
+			opts: Options{
+				TimeSeconds: 5,
+			},
+			remaining: []string{"binary", "input"},
+			expected:  []string{"-seconds", "5", "binary", "input"},
+		},
+		{
+			opts: Options{
+				TimeSeconds: 5,
+				// All other fields are ignored when remaining is specified.
+				BinaryFile: "/path/to/binaryfile",
+				BinaryName: "/path/to/binaryname",
+				URLSuffix:  "/ignored",
+			},
+			remaining: []string{"binary", "input"},
+			expected:  []string{"-seconds", "5", "binary", "input"},
+		},
 	}
 
 	for _, tt := range tests {
-		got, err := getArgs(tt.opts)
+		got, err := getArgs(tt.opts, tt.remaining)
 		if (err != nil) != tt.wantErr {
 			t.Errorf("wantErr %v got error: %v", tt.wantErr, err)
 			continue
@@ -121,7 +155,10 @@ func TestRunPProfMissingFile(t *testing.T) {
 }
 
 func TestRunPProfInvalidURL(t *testing.T) {
-	if _, err := runPProf("http://127.0.0.1:999/profile"); err == nil {
+	server := httptest.NewServer(http.HandlerFunc(http.NotFound))
+	defer server.Close()
+
+	if _, err := runPProf(server.URL); err == nil {
 		t.Fatalf("expected error for unknown file")
 	}
 }
@@ -130,7 +167,7 @@ func TestGetPProfRawBadURL(t *testing.T) {
 	opts := Options{
 		BaseURL: "%-0",
 	}
-	if _, err := GetRaw(opts); err == nil {
+	if _, err := GetRaw(opts, nil); err == nil {
 		t.Error("expected bad BaseURL to fail")
 	}
 }
@@ -139,7 +176,7 @@ func TestGetPProfRawSuccess(t *testing.T) {
 	opts := Options{
 		BinaryFile: "testdata/pprof.1.pb.gz",
 	}
-	raw, err := GetRaw(opts)
+	raw, err := GetRaw(opts, nil)
 	if err != nil {
 		t.Fatalf("getPProfRaw failed: %v", err)
 	}
