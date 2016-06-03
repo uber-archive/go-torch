@@ -37,16 +37,20 @@ import (
 
 // options are the parameters for go-torch.
 type options struct {
-	PProfOptions pprof.Options
-	File         string `short:"f" long:"file" default:"torch.svg" description:"Output file name (must be .svg)"`
-	Print        bool   `short:"p" long:"print" description:"Print the generated svg to stdout instead of writing to file"`
-	Raw          bool   `short:"r" long:"raw" description:"Print the raw call graph output to stdout instead of creating a flame graph; use with Brendan Gregg's flame graph perl script (see https://github.com/brendangregg/FlameGraph)"`
-	Title        string `long:"title" default:"Flame Graph" description:"Graph title to display in the output file"`
+	PProfOptions pprof.Options `group:"pprof Options"`
+	OutputOpts   outputOptions `group:"Output Options"`
+}
+
+type outputOptions struct {
+	File  string `short:"f" long:"file" default:"torch.svg" description:"Output file name (must be .svg)"`
+	Print bool   `short:"p" long:"print" description:"Print the generated svg to stdout instead of writing to file"`
+	Raw   bool   `short:"r" long:"raw" description:"Print the raw call graph output to stdout instead of creating a flame graph; use with Brendan Gregg's flame graph perl script (see https://github.com/brendangregg/FlameGraph)"`
+	Title string `long:"title" default:"Flame Graph" description:"Graph title to display in the output file"`
 }
 
 // main is the entry point of the application
 func main() {
-	if err := runWithArgs(os.Args...); err != nil {
+	if err := runWithArgs(os.Args[1:]...); err != nil {
 		torchlog.Fatalf("Failed: %v", err)
 	}
 }
@@ -54,7 +58,10 @@ func main() {
 func runWithArgs(args ...string) error {
 	opts := &options{}
 
-	remaining, err := gflags.ParseArgs(opts, args)
+	parser := gflags.NewParser(opts, gflags.Default|gflags.IgnoreUnknown)
+	parser.Usage = "[options] [binary] <profile source>"
+
+	remaining, err := parser.ParseArgs(args)
 	if err != nil {
 		if flagErr, ok := err.(*gflags.Error); ok && flagErr.Type == gflags.ErrHelp {
 			os.Exit(0)
@@ -65,15 +72,11 @@ func runWithArgs(args ...string) error {
 		return fmt.Errorf("invalid options: %v", err)
 	}
 
-	// If there are remaining arguments, the first argument is the binary name.
-	if len(remaining) > 0 {
-		remaining = remaining[1:]
-	}
 	return runWithOptions(opts, remaining)
 }
 
-func runWithOptions(opts *options, remaining []string) error {
-	pprofRawOutput, err := pprof.GetRaw(opts.PProfOptions, remaining)
+func runWithOptions(allOpts *options, remaining []string) error {
+	pprofRawOutput, err := pprof.GetRaw(allOpts.PProfOptions, remaining)
 	if err != nil {
 		return fmt.Errorf("could not get raw output from pprof: %v", err)
 	}
@@ -88,6 +91,7 @@ func runWithOptions(opts *options, remaining []string) error {
 		return fmt.Errorf("could not convert stacks to flamegraph input: %v", err)
 	}
 
+	opts := allOpts.OutputOpts
 	if opts.Raw {
 		torchlog.Print("Printing raw flamegraph input to stdout")
 		fmt.Printf("%s\n", flameInput)
@@ -114,7 +118,8 @@ func runWithOptions(opts *options, remaining []string) error {
 }
 
 func validateOptions(opts *options) error {
-	if opts.File != "" && !strings.HasSuffix(opts.File, ".svg") {
+	file := opts.OutputOpts.File
+	if file != "" && !strings.HasSuffix(file, ".svg") {
 		return fmt.Errorf("output file must end in .svg")
 	}
 	if opts.PProfOptions.TimeSeconds < 1 {

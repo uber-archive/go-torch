@@ -41,7 +41,7 @@ func init() {
 func getPrefix(level string, color *color.Color) string {
 	currentTime := time.Now().Format("15:04:05")
 	toColoredString := color.SprintFunc()
-	return toColoredString(fmt.Sprintf("%s[%s]", level, currentTime))
+	return toColoredString(fmt.Sprintf("%s[%s] ", level, currentTime))
 }
 
 // Fatalf wraps log.Fatalf and adds the current time and color.
