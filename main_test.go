@@ -101,7 +101,7 @@ func TestInvalidOptions(t *testing.T) {
 
 func TestRunRaw(t *testing.T) {
 	opts := getDefaultOptions()
-	opts.Raw = true
+	opts.OutputOpts.Raw = true
 
 	if err := runWithOptions(opts, nil); err != nil {
 		t.Fatalf("Run with Raw failed: %v", err)
@@ -120,14 +120,14 @@ func getTempFilename(t *testing.T, suffix string) string {
 
 func TestRunFile(t *testing.T) {
 	opts := getDefaultOptions()
-	opts.File = getTempFilename(t, ".svg")
+	opts.OutputOpts.File = getTempFilename(t, ".svg")
 
 	withScriptsInPath(t, func() {
 		if err := runWithOptions(opts, nil); err != nil {
 			t.Fatalf("Run with Print failed: %v", err)
 		}
 
-		f, err := os.Open(opts.File)
+		f, err := os.Open(opts.OutputOpts.File)
 		if err != nil {
 			t.Errorf("Failed to open output file: %v", err)
 		}
@@ -147,7 +147,7 @@ func TestRunFile(t *testing.T) {
 
 func TestRunBadFile(t *testing.T) {
 	opts := getDefaultOptions()
-	opts.File = "/dev/zero/invalid/file"
+	opts.OutputOpts.File = "/dev/zero/invalid/file"
 
 	withScriptsInPath(t, func() {
 		if err := runWithOptions(opts, nil); err == nil {
@@ -158,7 +158,7 @@ func TestRunBadFile(t *testing.T) {
 
 func TestRunPrint(t *testing.T) {
 	opts := getDefaultOptions()
-	opts.Print = true
+	opts.OutputOpts.Print = true
 
 	withScriptsInPath(t, func() {
 		if err := runWithOptions(opts, nil); err != nil {

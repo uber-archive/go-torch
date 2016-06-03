@@ -14,69 +14,103 @@ synthesizes them into a flame graph. Uses Go's built in [pprof][] library.
 ## Basic Usage
 
 ```
-$ go-torch --help
+$ go-torch -h
+Usage:
+  go-torch [options] [binary] <profile source>
 
-NAME:
-   go-torch - go-torch collects stack traces of a Go application and synthesizes them into into a [flame graph](http://www.brendangregg.com/FlameGraphs/cpuflamegraphs.html)
+pprof Options:
+  -u, --url=         Base URL of your Go program (default: http://localhost:8080)
+  -s, --suffix=      URL path of pprof profile (default: /debug/pprof/profile)
+  -b, --binaryinput= File path of previously saved binary profile. (binary profile is anything accepted by https://golang.org/cmd/pprof)
+      --binaryname=  File path of the binary that the binaryinput is for, used for pprof inputs
+  -t, --seconds=     Number of seconds to profile for (default: 30)
+      --pprofArgs=   Extra arguments for pprof
 
-USAGE:
-   go-torch [global options] command [command options] [arguments...]
+Output Options:
+  -f, --file=        Output file name (must be .svg) (default: torch.svg)
+  -p, --print        Print the generated svg to stdout instead of writing to file
+  -r, --raw          Print the raw call graph output to stdout instead of creating a flame graph; use with Brendan Gregg's flame graph perl script (see https://github.com/brendangregg/FlameGraph)
+      --title=       Graph title to display in the output file (default: Flame Graph)
 
-COMMANDS:
-   help, h  Shows a list of commands or help for one command
-
-GLOBAL OPTIONS:
-   --url, -u "http://localhost:8080"   base url of your Go program
-   --suffix, -s "/debug/pprof/profile" url path of pprof profile
-   --binaryinput, -b          file path of raw binary profile; alternative to having go-torch query pprof endpoint (binary profile is anything accepted by https://golang.org/cmd/pprof)
-   --binaryname               file path of the binary that the binaryinput is for, used for pprof inputs
-   --time, -t "30"         time in seconds to profile for
-   --file, -f "torch.svg"     ouput file name (must be .svg)
-   --print, -p          print the generated svg to stdout instead of writing to file
-   --raw, -r            print the raw call graph output to stdout instead of creating a flame graph; use with Brendan Gregg's flame graph perl script (see https://github.com/brendangregg/FlameGraph)
-   --title              graph title to display in the output file
-   --help, -h           show help
-   --version, -v        print the version
+Help Options:
+  -h, --help         Show this help message
 ```
 
-### File Example
+### Write flamegraph using /debug/pprof endpoint
+
+The default options will hit `http://localhost:8080/debug/pprof/profile` for
+a 30 second CPU profile, and write it out to torch.svg
 
 ```
-$ go-torch --time=15 --file "torch.svg" --url http://localhost:8080
-INFO[0000] Profiling ...
-INFO[0015] flame graph has been created as torch.svg
+$ go-torch
+INFO[19:10:58] Run pprof command: go tool pprof -raw -seconds 30 http://localhost:8080/debug/pprof/profile
+INFO[19:11:03] Writing svg to torch.svg
 ```
 
-### Stdout Example
+You can customize the base URL by using `-u`
 
 ```
-$ go-torch --time=15 --print --url http://localhost:8080
-INFO[0000] Profiling ...
-<svg>
-...
-</svg>
-INFO[0015] flame graph has been printed to stdout
+$ go-torch -u http://my-service:8080/
+INFO[19:10:58] Run pprof command: go tool pprof -raw -seconds 30 http://my-service:8080/debug/pprof/profile
+INFO[19:11:03] Writing svg to torch.svg
 ```
 
-### Raw Example
+Or change the number of seconds to profile using `--seconds`:
 
 ```
-$ go-torch --time=15 --raw --url http://localhost:8080
-INFO[0000] Profiling ...
-function1;function2 3
-...
-INFO[0015] raw call graph output been printed to stdout
+$ go-torch --seconds 5
+INFO[19:10:58] Run pprof command: go tool pprof -raw -seconds 5 http://localhost:8080/debug/pprof/profile
+INFO[19:11:03] Writing svg to torch.svg
 ```
 
-### Local pprof Example
 
+### Using pprof arguments
+
+`go-torch` will pass through arguments to `go tool pprof`, which lets you take
+existing pprof commands and easily make them work with `go-torch`.
+
+For example, after creating a CPU profile from a benchmark:
 ```
-$ go test -cpuprofile=cpu.pprof
-# This creates a cpu.pprof file, and the golang.test binary.
-$ go-torch --binaryinput cpu.pprof --binaryname golang.test
-INFO[0000] Profiling ...
-INFO[0000] flame graph has been created as torch.svg
+$ go test -bench . -cpuprofile=cpu.prof
+
+# This creates a cpu.prof file, and the $PKG.test binary.
 ```
+
+The same arguments that can be used with `go tool pprof` will also work
+with `go-torch`:
+```
+$ go tool pprof main.test cpu.prof
+
+# Same arguments work with go-torch
+$ go-torch main.test cpu.pprof
+INFO[19:00:29] Run pprof command: go tool pprof -raw -seconds 30 main.test prof.cpu
+INFO[19:00:29] Writing svg to torch.svg
+```
+
+
+Flags that are not handled by `go-torch` are passed through as well:
+```
+$ go-torch --alloc_objects main.test mem.prof
+INFO[19:00:29] Run pprof command: go tool pprof -raw -seconds 30 --alloc_objects main.test prof.mem
+INFO[19:00:29] Writing svg to torch.svg
+```
+
+## Integrating With Your Application
+
+To add profiling endpoints in your application, follow the official
+Go docs [here][].
+If your application is already running a server on the DefaultServeMux,
+just add this import to your application.
+
+[here]: https://golang.org/pkg/net/http/pprof/
+
+```go
+import _ "net/http/pprof"
+```
+
+If your application is not using the DefaultServeMux, you can still easily
+expose pprof endpoints by manually registering the net/http/pprof handlers or by
+using a library like [this one](https://github.com/e-dard/netbug).
 
 ## Installation
 
@@ -92,36 +126,27 @@ $ docker run uber/go-torch -u http://[address-of-host] -p > torch.svg
 Using `-p` will print the SVG to standard out, which can then be redirected
 to a file. This avoids mounting volumes to a container.
 
+### Get the flame graph script:
+
+When using the `go-torch` binary locally, you will need the Flamegraph scripts
+in your `PATH`:
+
+```
+$ cd $GOPATH/src/github.com/uber/go-torch
+$ git clone https://github.com/brendangregg/FlameGraph.git
+```
+
+## Development and Testing
+
 ### Install the Go dependencies:
 
 ```
 $ go get github.com/Masterminds/glide
+$ cd $GOPATH/src/github.com/uber/go-torch
 $ glide install
 ```
 
-### Get the flame graph script:
-
-```
-$ git clone https://github.com/brendangregg/FlameGraph.git
-```
-
-## Integrating With Your Application
-
-Expose a pprof endpoint. Official Go docs are [here][]. If your application is
-already running a server on the DefaultServeMux, just add this import to your
-application.
-
-[here]: https://golang.org/pkg/net/http/pprof/
-
-```go
-import _ "net/http/pprof"
-```
-
-If your application is not using the DefaultServeMux, you can still easily
-expose pprof endpoints by manually registering the net/http/pprof handlers or by
-using a library like [this one](https://github.com/e-dard/netbug).
-
-## Run the Tests
+### Run the Tests
 
 ```
 $ go test ./...
