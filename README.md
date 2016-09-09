@@ -82,8 +82,8 @@ with `go-torch`:
 $ go tool pprof main.test cpu.prof
 
 # Same arguments work with go-torch
-$ go-torch main.test cpu.pprof
-INFO[19:00:29] Run pprof command: go tool pprof -raw -seconds 30 main.test prof.cpu
+$ go-torch main.test cpu.prof
+INFO[19:00:29] Run pprof command: go tool pprof -raw -seconds 30 main.test cpu.prof
 INFO[19:00:29] Writing svg to torch.svg
 ```
 
@@ -91,7 +91,7 @@ INFO[19:00:29] Writing svg to torch.svg
 Flags that are not handled by `go-torch` are passed through as well:
 ```
 $ go-torch --alloc_objects main.test mem.prof
-INFO[19:00:29] Run pprof command: go tool pprof -raw -seconds 30 --alloc_objects main.test prof.mem
+INFO[19:00:29] Run pprof command: go tool pprof -raw -seconds 30 --alloc_objects main.test mem.prof
 INFO[19:00:29] Writing svg to torch.svg
 ```
 
