@@ -1,20 +1,28 @@
-hash: b242f7d839e91092957e62d5debf0d1217aa491911cc064a022d142640ec346f
-updated: 2016-06-02T22:55:54.40038441-07:00
+hash: bed3a075baacc2eac4f2ec779f188ce2be7c9daffd77e4a5cada069b5d1f54f8
+updated: 2016-10-28T14:22:52.238218907-07:00
 imports:
 - name: github.com/fatih/color
-  version: 533cd7fd8a85905f67a1753afb4deddc85ea174f
+  version: bf82308e8c8546dc2b945157173eb8a959ae9505
 - name: github.com/jessevdk/go-flags
-  version: 6b9493b3cb60367edd942144879646604089e3f7
+  version: 4cc2832a6e6d1d3b815e2b9d544b2a4dfb3ce8fa
 - name: github.com/mattn/go-colorable
-  version: 9cbef7c35391cca05f15f8181dc0b18bc9736dbb
-  repo: https://github.com/mattn/go-colorable
+  version: 6c903ff4aa50920ca86087a280590b36b3152b9c
 - name: github.com/mattn/go-isatty
-  version: 56b76bdf51f7708750eac80fa38b952bb9f32639
-  repo: https://github.com/mattn/go-isatty
-- name: github.com/stretchr/testify
-  version: 8d64eb7173c7753d6419fd4a9caf057398611364
+  version: 66b8e73f3f5cda9f96b69efd03dd3d7fc4a5cdb8
 - name: golang.org/x/sys
-  version: 320cb01ddbbf0473674c2585f9b6e245721de355
+  version: a646d33e2ee3172a661fc09bca23bb4889a41bc8
   subpackages:
   - unix
-devImports: []
+testImports:
+- name: github.com/davecgh/go-spew
+  version: 6d212800a42e8ab5c146b8ace3490ee17e5225f9
+  subpackages:
+  - spew
+- name: github.com/pmezard/go-difflib
+  version: 792786c7400a136282c1664665ae0a8db921c6c2
+  subpackages:
+  - difflib
+- name: github.com/stretchr/testify
+  version: 976c720a22c8eb4eb6a0b4348ad85ad12491a506
+  subpackages:
+  - assert
