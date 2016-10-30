@@ -31,10 +31,10 @@ Output Options:
   -p, --print        Print the generated svg to stdout instead of writing to file
   -r, --raw          Print the raw call graph output to stdout instead of creating a flame graph; use with Brendan Gregg's flame graph perl script (see https://github.com/brendangregg/FlameGraph)
       --title=       Graph title to display in the output file (default: Flame Graph)
-      --width        Graph width of image (default 1200)
-      --colors       Graph color palette. choices are: hot (default), mem, io,
-                     wakeup, chain, java, js, perl, red, green, blue, aqua,
-                     yellow, purple, orange
+      --width=       Generated graph width (default: 1200)
+      --hash         Colors are keyed by function name hash
+      --colors=      set color palette. choices are: hot (default), mem, io, wakeup, chain, java,
+                     js, perl, red, green, blue, aqua, yellow, purple, orange
       --hash         Graph colors are keyed by function name hash
       --cp           Graph use consistent palette (palette.map)
       --inverted     Graph icicle graph
