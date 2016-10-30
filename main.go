@@ -47,7 +47,7 @@ type outputOptions struct {
 	Print        bool   `short:"p" long:"print" description:"Print the generated svg to stdout instead of writing to file"`
 	Raw          bool   `short:"r" long:"raw" description:"Print the raw call graph output to stdout instead of creating a flame graph; use with Brendan Gregg's flame graph perl script (see https://github.com/brendangregg/FlameGraph)"`
 	Title        string `long:"title" default:"Flame Graph" description:"Graph title to display in the output file"`
-	Width        int64  `long:"width" default:"1900" description:"Generated graph width"`
+	Width        int64  `long:"width" default:"1200" description:"Generated graph width"`
 	Hash         bool   `long:"hash" description:"Colors are keyed by function name hash"`
 	Colors       string `long:"colors" default:"" description:"set color palette. choices are: hot (default), mem, io, wakeup, chain, java, js, perl, red, green, blue, aqua, yellow, purple, orange"`
 	ColorPalette bool   `long:"cp" description:"Use consistent palette (palette.map)"`
