@@ -152,7 +152,7 @@ func validateOptions(opts *options) error {
 			}
 		}
 		if !isValidColors {
-			return fmt.Errorf("FlameGraph unknown colors %q. Valid ones are %v", opts.OutputOpts.Colors, validColors)
+			return fmt.Errorf("FlameGraph unknown colors %q. Valid ones are: %s", opts.OutputOpts.Colors, strings.Join(validColors, ", "))
 		}
 	}
 
@@ -178,7 +178,7 @@ func buildFlameGraphArgs(opts outputOptions) []string {
 		args = append(args, "--hash")
 	}
 
-	if opts.ColorPalette {
+	if opts.ConsistentPalette {
 		args = append(args, "--cp")
 	}
 

@@ -91,11 +91,11 @@ func TestInvalidOptions(t *testing.T) {
 		},
 		{
 			args:         []string{"--width", "10"},
-			errorMessage: "FlameGraph miminal graph with is 1 200 pixels",
+			errorMessage: "FlameGraph miminal graph width is 1200 pixels",
 		},
 		{
 			args:         []string{"--colors", "foo"},
-			errorMessage: "FlameGraph unknown colors 'foo'",
+			errorMessage: "FlameGraph unknown colors \"foo\". Valid ones are: hot, mem, io, wakeup, chain, java, js, perl, red, green, blue, aqua, yellow, purple, orange",
 		},
 	}
 
@@ -127,11 +127,11 @@ func TestFlameGraphArgs(t *testing.T) {
 
 	opts.OutputOpts.Hash = true
 	opts.OutputOpts.Colors = "perl"
-	opts.OutputOpts.ColorPalette = true
+	opts.OutputOpts.ConsistentPalette = true
 	opts.OutputOpts.Reverse = true
 	opts.OutputOpts.Inverted = true
 
-	expectedCommandWithArgs := []string{"--title", "Flame Graph", "--width", "1900", "--colors", "perl",
+	expectedCommandWithArgs := []string{"--title", "Flame Graph", "--width", "1200", "--colors", "perl",
 		"--hash", "--cp", "--reverse", "--inverted"}
 
 	if !reflect.DeepEqual(expectedCommandWithArgs, buildFlameGraphArgs(opts.OutputOpts)) {
