@@ -33,11 +33,11 @@ Output Options:
       --title=       Graph title to display in the output file (default: Flame Graph)
       --width=       Generated graph width (default: 1200)
       --hash         Colors are keyed by function name hash
-      --colors=      set color palette. choices are: hot (default), mem, io, wakeup, chain, java,
+      --colors=      Set color palette. Valid choices are: hot (default), mem, io, wakeup, chain, java,
                      js, perl, red, green, blue, aqua, yellow, purple, orange
       --hash         Graph colors are keyed by function name hash
       --cp           Graph use consistent palette (palette.map)
-      --inverted     Graph icicle graph
+      --inverted     Icicle graph
 Help Options:
   -h, --help         Show this help message
 ```
