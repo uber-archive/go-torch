@@ -87,15 +87,15 @@ func TestInvalidOptions(t *testing.T) {
 		},
 		{
 			args:         []string{"--title", ""},
-			errorMessage: "FlameGraph title should not be empty",
+			errorMessage: "flamegraph title should not be empty",
 		},
 		{
-			args:         []string{"--width", "10"},
-			errorMessage: "FlameGraph miminal graph width is 1200 pixels",
+			args:         []string{"--width", "0"},
+			errorMessage: "flamegraph default width is 1200 pixels",
 		},
 		{
 			args:         []string{"--colors", "foo"},
-			errorMessage: "FlameGraph unknown colors \"foo\". Valid ones are: hot, mem, io, wakeup, chain, java, js, perl, red, green, blue, aqua, yellow, purple, orange",
+			errorMessage: "unknown flamegraph colors \"foo\"",
 		},
 	}
 

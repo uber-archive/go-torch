@@ -136,23 +136,17 @@ func validateOptions(opts *options) error {
 
 	// extra FlameGraph options
 	if opts.OutputOpts.Title == "" {
-		return fmt.Errorf("FlameGraph title should not be empty")
+		return fmt.Errorf("flamegraph title should not be empty")
 	}
-	if opts.OutputOpts.Width < 1200 {
-		return fmt.Errorf("FlameGraph miminal graph width is 1200 pixels")
+	if opts.OutputOpts.Width <= 0 {
+		return fmt.Errorf("flamegraph default width is 1200 pixels")
 	}
 	if opts.OutputOpts.Colors != "" {
-		var validColors = []string{"hot", "mem", "io", "wakeup", "chain", "java", "js", "perl", "red",
-			"green", "blue", "aqua", "yellow", "purple", "orange"}
-		var isValidColors = false
-		for _, color := range validColors {
-			if opts.OutputOpts.Colors == color {
-				isValidColors = true
-				break
-			}
-		}
-		if !isValidColors {
-			return fmt.Errorf("FlameGraph unknown colors %q. Valid ones are: %s", opts.OutputOpts.Colors, strings.Join(validColors, ", "))
+		switch opts.OutputOpts.Colors {
+		case "hot", "mem", "io", "wakeup", "chain", "java", "js", "perl", "red", "green", "blue", "aqua", "yellow", "purple", "orange":
+			// valid
+		default:
+			return fmt.Errorf("unknown flamegraph colors %q", opts.OutputOpts.Colors)
 		}
 	}
 
