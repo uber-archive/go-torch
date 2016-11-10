@@ -25,6 +25,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -84,6 +85,18 @@ func TestInvalidOptions(t *testing.T) {
 			args:         []string{"-t", "0"},
 			errorMessage: "seconds must be an integer greater than 0",
 		},
+		{
+			args:         []string{"--title", ""},
+			errorMessage: "flamegraph title should not be empty",
+		},
+		{
+			args:         []string{"--width", "0"},
+			errorMessage: "flamegraph default width is 1200 pixels",
+		},
+		{
+			args:         []string{"--colors", "foo"},
+			errorMessage: "unknown flamegraph colors \"foo\"",
+		},
 	}
 
 	for _, tt := range tests {
@@ -105,6 +118,28 @@ func TestRunRaw(t *testing.T) {
 
 	if err := runWithOptions(opts, nil); err != nil {
 		t.Fatalf("Run with Raw failed: %v", err)
+	}
+}
+
+func TestFlameGraphArgs(t *testing.T) {
+	opts := getDefaultOptions()
+	opts.OutputOpts.Raw = true
+
+	opts.OutputOpts.Hash = true
+	opts.OutputOpts.Colors = "perl"
+	opts.OutputOpts.ConsistentPalette = true
+	opts.OutputOpts.Reverse = true
+	opts.OutputOpts.Inverted = true
+
+	expectedCommandWithArgs := []string{"--title", "Flame Graph", "--width", "1200", "--colors", "perl",
+		"--hash", "--cp", "--reverse", "--inverted"}
+
+	if !reflect.DeepEqual(expectedCommandWithArgs, buildFlameGraphArgs(opts.OutputOpts)) {
+		t.Fatalf("Invalid extra FlameGraph arguments!")
+	}
+
+	if err := runWithOptions(opts, nil); err != nil {
+		t.Fatalf("Run with extra FlameGraph arguments failed: %v", err)
 	}
 }
 

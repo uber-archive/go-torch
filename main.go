@@ -26,6 +26,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/uber/go-torch/pprof"
@@ -42,10 +43,16 @@ type options struct {
 }
 
 type outputOptions struct {
-	File  string `short:"f" long:"file" default:"torch.svg" description:"Output file name (must be .svg)"`
-	Print bool   `short:"p" long:"print" description:"Print the generated svg to stdout instead of writing to file"`
-	Raw   bool   `short:"r" long:"raw" description:"Print the raw call graph output to stdout instead of creating a flame graph; use with Brendan Gregg's flame graph perl script (see https://github.com/brendangregg/FlameGraph)"`
-	Title string `long:"title" default:"Flame Graph" description:"Graph title to display in the output file"`
+	File              string `short:"f" long:"file" default:"torch.svg" description:"Output file name (must be .svg)"`
+	Print             bool   `short:"p" long:"print" description:"Print the generated svg to stdout instead of writing to file"`
+	Raw               bool   `short:"r" long:"raw" description:"Print the raw call graph output to stdout instead of creating a flame graph; use with Brendan Gregg's flame graph perl script (see https://github.com/brendangregg/FlameGraph)"`
+	Title             string `long:"title" default:"Flame Graph" description:"Graph title to display in the output file"`
+	Width             int64  `long:"width" default:"1200" description:"Generated graph width"`
+	Hash              bool   `long:"hash" description:"Colors are keyed by function name hash"`
+	Colors            string `long:"colors" default:"" description:"set color palette. choices are: hot (default), mem, io, wakeup, chain, java, js, perl, red, green, blue, aqua, yellow, purple, orange"`
+	ConsistentPalette bool   `long:"cp" description:"Use consistent palette (palette.map)"`
+	Reverse           bool   `long:"reverse" description:"Generate stack-reversed flame graph"`
+	Inverted          bool   `long:"inverted" description:"icicle graph"`
 }
 
 // main is the entry point of the application
@@ -98,7 +105,8 @@ func runWithOptions(allOpts *options, remaining []string) error {
 		return nil
 	}
 
-	flameGraph, err := renderer.GenerateFlameGraph(flameInput, "--title", opts.Title)
+	var flameGraphArgs = buildFlameGraphArgs(opts)
+	flameGraph, err := renderer.GenerateFlameGraph(flameInput, flameGraphArgs...)
 	if err != nil {
 		return fmt.Errorf("could not generate flame graph: %v", err)
 	}
@@ -125,5 +133,56 @@ func validateOptions(opts *options) error {
 	if opts.PProfOptions.TimeSeconds < 1 {
 		return fmt.Errorf("seconds must be an integer greater than 0")
 	}
+
+	// extra FlameGraph options
+	if opts.OutputOpts.Title == "" {
+		return fmt.Errorf("flamegraph title should not be empty")
+	}
+	if opts.OutputOpts.Width <= 0 {
+		return fmt.Errorf("flamegraph default width is 1200 pixels")
+	}
+	if opts.OutputOpts.Colors != "" {
+		switch opts.OutputOpts.Colors {
+		case "hot", "mem", "io", "wakeup", "chain", "java", "js", "perl", "red", "green", "blue", "aqua", "yellow", "purple", "orange":
+			// valid
+		default:
+			return fmt.Errorf("unknown flamegraph colors %q", opts.OutputOpts.Colors)
+		}
+	}
+
 	return nil
+}
+
+func buildFlameGraphArgs(opts outputOptions) []string {
+	var args []string
+
+	if opts.Title != "" {
+		args = append(args, "--title", opts.Title)
+	}
+
+	if opts.Width > 0 {
+		args = append(args, "--width", strconv.FormatInt(opts.Width, 10))
+	}
+
+	if opts.Colors != "" {
+		args = append(args, "--colors", opts.Colors)
+	}
+
+	if opts.Hash {
+		args = append(args, "--hash")
+	}
+
+	if opts.ConsistentPalette {
+		args = append(args, "--cp")
+	}
+
+	if opts.Reverse {
+		args = append(args, "--reverse")
+	}
+
+	if opts.Inverted {
+		args = append(args, "--inverted")
+	}
+
+	return args
 }
