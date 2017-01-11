@@ -198,7 +198,7 @@ func (p *rawParser) addSample(line string) {
 	funcIDs := p.parseFuncIDs(lineParts[1])
 
 	if len(samples) != len(p.columns) {
-		p.setError(fmt.Errorf("line has more samples (%v) than columns (%v): %v",
+		p.setError(fmt.Errorf("line has a different sample count (%v) than columns (%v): %v",
 			len(samples), len(p.columns), line))
 		return
 	}

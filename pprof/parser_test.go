@@ -27,6 +27,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/uber/go-torch/stack"
 )
 
@@ -55,6 +56,8 @@ func TestParseMemProfile(t *testing.T) {
 
 func TestParse(t *testing.T) {
 	_, parser := parseTest1(t)
+
+	assert.Equal(t, []string{"samples/count", "cpu/nanoseconds"}, parser.columns)
 
 	// line 7 - 249 are stack records in the test file.
 	const expectedNumRecords = 242
@@ -158,6 +161,18 @@ func TestParseMissingSourceLine(t *testing.T) {
 	if !reflect.DeepEqual(out, expected) {
 		t.Errorf("Missing function call stack should contain missing-function-2\n  got %+v\n want %+v", expected, out)
 	}
+}
+
+func TestParseSampleCountMismatch(t *testing.T) {
+	contents := `Samples:
+	samples/count cpu/nanoseconds alloc_objects/count
+	   2   10000000: 1
+	Locations:
+	   1: 0xaaaaa funcName :0 s=0
+`
+	_, err := ParseRaw([]byte(contents))
+	require.Error(t, err, "Expected parseRaw to fail with sample count mismatch")
+	assert.Contains(t, err.Error(), "different sample count (2) than columns (3)")
 }
 
 func testParseRawBad(t *testing.T, errorReason, errorSubstr, contents string) {
