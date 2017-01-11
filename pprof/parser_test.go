@@ -50,6 +50,7 @@ func parseTest1(t *testing.T) ([]byte, *rawParser) {
 
 func TestParseMemProfile(t *testing.T) {
 	parseTestRawData(t, "testdata/pprof3.raw.txt")
+	parseTestRawData(t, "testdata/pprof-memprofile-1.8.raw.txt")
 }
 
 func TestParse(t *testing.T) {
@@ -62,9 +63,18 @@ func TestParse(t *testing.T) {
 			len(parser.records), expectedNumRecords)
 	}
 	expectedRecords := map[int]*stackRecord{
-		0:  &stackRecord{1, 10000000, []funcID{1, 2, 2, 2, 3, 3, 2, 2, 3, 3, 2, 2, 2, 3, 3, 3, 2, 3, 2, 3, 2, 2, 3, 2, 2, 3, 4, 5, 6}},
-		18: &stackRecord{1, 10000000, []funcID{14, 2, 2, 3, 2, 2, 3, 2, 2, 3, 3, 3, 2, 2, 2, 3, 3, 2, 3, 3, 3, 3, 3, 2, 4, 5, 6}},
-		45: &stackRecord{12, 120000000, []funcID{23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34}},
+		0: &stackRecord{
+			samples: []int64{1, 10000000},
+			stack:   []funcID{1, 2, 2, 2, 3, 3, 2, 2, 3, 3, 2, 2, 2, 3, 3, 3, 2, 3, 2, 3, 2, 2, 3, 2, 2, 3, 4, 5, 6},
+		},
+		18: &stackRecord{
+			samples: []int64{1, 10000000},
+			stack:   []funcID{14, 2, 2, 3, 2, 2, 3, 2, 2, 3, 3, 3, 2, 2, 2, 3, 3, 2, 3, 3, 3, 3, 3, 2, 4, 5, 6},
+		},
+		45: &stackRecord{
+			samples: []int64{12, 120000000},
+			stack:   []funcID{23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34},
+		},
 	}
 	for recordNum, expected := range expectedRecords {
 		if got := parser.records[recordNum]; !reflect.DeepEqual(got, expected) {

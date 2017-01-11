@@ -51,6 +51,7 @@ type rawParser struct {
 
 	state     readState
 	funcNames map[funcID]string
+	columns   []string
 	records   []*stackRecord
 }
 
@@ -106,6 +107,7 @@ func (p *rawParser) processLine(line string) {
 			return
 		}
 	case samplesHeader:
+		p.columns = strings.Split(line, " ")
 		p.state = samples
 	case samples:
 		if strings.HasPrefix(line, "Locations") {
@@ -132,13 +134,13 @@ func (p *rawParser) toSamples() []*stack.Sample {
 		funcKey := strings.Join(funcNames, ";")
 
 		if sample, ok := samples[funcKey]; ok {
-			sample.Count += r.samples
+			sample.Count += r.samples[0]
 			continue
 		}
 
 		samples[funcKey] = &stack.Sample{
 			Funcs: funcNames,
-			Count: r.samples,
+			Count: r.samples[0],
 		}
 	}
 
@@ -171,8 +173,7 @@ func (p *rawParser) addLocation(line string) {
 }
 
 type stackRecord struct {
-	samples int64
-	total   int64
+	samples []int64
 	stack   []funcID
 }
 
@@ -180,28 +181,34 @@ type stackRecord struct {
 //   1   10000000: 1 2 3 4
 // and creates a stackRecord for it.
 func (p *rawParser) addSample(line string) {
-	// Parse a sample which looks like:
-	parts := splitBySpace(line)
-	if strings.HasPrefix(parts[0], "bytes:[") {
-		// Memory profiles have a line line bytes:[size1] which says the size of the object.
-		// Skip these lines.
+	if strings.Contains(line, "bytes:[") {
+		// Memory profiles have a line of bytes:[size1] which contains the size
+		// of the object. Skip these lines as we do not use it currently.
 		return
 	}
-	if len(parts) < 3 {
+
+	// Split by ":" which separates the data from the function IDs.
+	lineParts := strings.Split(line, ":")
+	if len(lineParts) != 2 {
 		p.setError(fmt.Errorf("malformed sample line: %v", line))
 		return
 	}
 
-	record := &stackRecord{
-		samples: p.parseInt(parts[0]),
-		total:   p.parseInt(strings.TrimSuffix(parts[1], ":")),
-	}
-	for _, fIDStr := range parts[2:] {
-		record.stack = append(record.stack, p.toFuncID(fIDStr))
+	samples := p.parseInts(lineParts[0])
+	funcIDs := p.parseFuncIDs(lineParts[1])
+
+	if len(samples) != len(p.columns) {
+		p.setError(fmt.Errorf("line has more samples (%v) than columns (%v): %v",
+			len(samples), len(p.columns), line))
+		return
 	}
 
-	p.records = append(p.records, record)
+	p.records = append(p.records, &stackRecord{
+		samples: samples,
+		stack:   funcIDs,
+	})
 }
+
 func getFunctionName(funcNames map[funcID]string, funcID funcID) string {
 	if funcName, ok := funcNames[funcID]; ok {
 		return funcName
@@ -218,6 +225,24 @@ func (r *stackRecord) funcNames(funcNames map[funcID]string) []string {
 		names = append(names, getFunctionName(funcNames, funcID))
 	}
 	return names
+}
+
+func (p *rawParser) parseFuncIDs(s string) []funcID {
+	funcInts := p.parseInts(s)
+	funcIDs := make([]funcID, len(funcInts))
+	for i, fID := range funcInts {
+		funcIDs[i] = funcID(fID)
+	}
+	return funcIDs
+}
+
+func (p *rawParser) parseInts(s string) []int64 {
+	ss := splitBySpace(s)
+	samples := make([]int64, len(ss))
+	for i, s := range ss {
+		samples[i] = p.parseInt(s)
+	}
+	return samples
 }
 
 // parseInt converts a string to an int64. It stores any errors using setError.
