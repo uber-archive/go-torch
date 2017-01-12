@@ -27,6 +27,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/uber/go-torch/stack"
 )
 
@@ -50,10 +51,13 @@ func parseTest1(t *testing.T) ([]byte, *rawParser) {
 
 func TestParseMemProfile(t *testing.T) {
 	parseTestRawData(t, "testdata/pprof3.raw.txt")
+	parseTestRawData(t, "testdata/pprof-memprofile-1.8.raw.txt")
 }
 
 func TestParse(t *testing.T) {
 	_, parser := parseTest1(t)
+
+	assert.Equal(t, []string{"samples/count", "cpu/nanoseconds"}, parser.columns)
 
 	// line 7 - 249 are stack records in the test file.
 	const expectedNumRecords = 242
@@ -62,9 +66,18 @@ func TestParse(t *testing.T) {
 			len(parser.records), expectedNumRecords)
 	}
 	expectedRecords := map[int]*stackRecord{
-		0:  &stackRecord{1, 10000000, []funcID{1, 2, 2, 2, 3, 3, 2, 2, 3, 3, 2, 2, 2, 3, 3, 3, 2, 3, 2, 3, 2, 2, 3, 2, 2, 3, 4, 5, 6}},
-		18: &stackRecord{1, 10000000, []funcID{14, 2, 2, 3, 2, 2, 3, 2, 2, 3, 3, 3, 2, 2, 2, 3, 3, 2, 3, 3, 3, 3, 3, 2, 4, 5, 6}},
-		45: &stackRecord{12, 120000000, []funcID{23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34}},
+		0: &stackRecord{
+			samples: []int64{1, 10000000},
+			stack:   []funcID{1, 2, 2, 2, 3, 3, 2, 2, 3, 3, 2, 2, 2, 3, 3, 3, 2, 3, 2, 3, 2, 2, 3, 2, 2, 3, 4, 5, 6},
+		},
+		18: &stackRecord{
+			samples: []int64{1, 10000000},
+			stack:   []funcID{14, 2, 2, 3, 2, 2, 3, 2, 2, 3, 3, 3, 2, 2, 2, 3, 3, 2, 3, 3, 3, 3, 3, 2, 4, 5, 6},
+		},
+		45: &stackRecord{
+			samples: []int64{12, 120000000},
+			stack:   []funcID{23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34},
+		},
 	}
 	for recordNum, expected := range expectedRecords {
 		if got := parser.records[recordNum]; !reflect.DeepEqual(got, expected) {
@@ -148,6 +161,18 @@ func TestParseMissingSourceLine(t *testing.T) {
 	if !reflect.DeepEqual(out, expected) {
 		t.Errorf("Missing function call stack should contain missing-function-2\n  got %+v\n want %+v", expected, out)
 	}
+}
+
+func TestParseSampleCountMismatch(t *testing.T) {
+	contents := `Samples:
+	samples/count cpu/nanoseconds alloc_objects/count
+	   2   10000000: 1
+	Locations:
+	   1: 0xaaaaa funcName :0 s=0
+`
+	_, err := ParseRaw([]byte(contents))
+	require.Error(t, err, "Expected parseRaw to fail with sample count mismatch")
+	assert.Contains(t, err.Error(), "different sample count (2) than columns (3)")
 }
 
 func testParseRawBad(t *testing.T, errorReason, errorSubstr, contents string) {
