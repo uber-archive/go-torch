@@ -49,20 +49,20 @@ type rawParser struct {
 	// err is the first error encountered by the parser.
 	err error
 
-	state     readState
-	funcNames map[funcID]string
-	columns   []string
-	records   []*stackRecord
+	state       readState
+	funcNames   map[funcID]string
+	sampleNames []string
+	records     []*stackRecord
 }
 
 // ParseRaw parses the raw pprof output and returns call stacks.
-func ParseRaw(input []byte) ([]*stack.Sample, error) {
+func ParseRaw(input []byte) (*stack.Profile, error) {
 	parser := newRawParser()
 	if err := parser.parse(input); err != nil {
 		return nil, err
 	}
 
-	return parser.toSamples(), nil
+	return parser.toProfile()
 }
 
 func newRawParser() *rawParser {
@@ -107,7 +107,7 @@ func (p *rawParser) processLine(line string) {
 			return
 		}
 	case samplesHeader:
-		p.columns = strings.Split(line, " ")
+		p.sampleNames = strings.Split(line, " ")
 		p.state = samples
 	case samples:
 		if strings.HasPrefix(line, "Locations") {
@@ -126,30 +126,34 @@ func (p *rawParser) processLine(line string) {
 	}
 }
 
-// toSamples aggregates stack sample counts and returns a list of unique stack samples.
-func (p *rawParser) toSamples() []*stack.Sample {
+// toProfile aggregates stack sample counts and returns a profile with unique stack samples.
+func (p *rawParser) toProfile() (*stack.Profile, error) {
+	profile, err := stack.NewProfile(p.sampleNames)
+	if err != nil {
+		return nil, err
+	}
+
 	samples := make(map[string]*stack.Sample)
 	for _, r := range p.records {
 		funcNames := r.funcNames(p.funcNames)
 		funcKey := strings.Join(funcNames, ";")
 
 		if sample, ok := samples[funcKey]; ok {
-			sample.Count += r.samples[0]
+			if err := sample.Add(r.samples); err != nil {
+				return nil, err
+			}
 			continue
 		}
 
-		samples[funcKey] = &stack.Sample{
-			Funcs: funcNames,
-			Count: r.samples[0],
-		}
+		samples[funcKey] = stack.NewSample(funcNames, r.samples)
 	}
 
-	samplesList := make([]*stack.Sample, 0, len(samples))
+	profile.Samples = make([]*stack.Sample, 0, len(samples))
 	for _, s := range samples {
-		samplesList = append(samplesList, s)
+		profile.Samples = append(profile.Samples, s)
 	}
 
-	return samplesList
+	return profile, nil
 }
 
 // addLocation parses a location that looks like:
@@ -197,9 +201,9 @@ func (p *rawParser) addSample(line string) {
 	samples := p.parseInts(lineParts[0])
 	funcIDs := p.parseFuncIDs(lineParts[1])
 
-	if len(samples) != len(p.columns) {
-		p.setError(fmt.Errorf("line has a different sample count (%v) than columns (%v): %v",
-			len(samples), len(p.columns), line))
+	if len(samples) != len(p.sampleNames) {
+		p.setError(fmt.Errorf("line has a different sample count (%v) than sample names (%v): %v",
+			len(samples), len(p.sampleNames), line))
 		return
 	}
 

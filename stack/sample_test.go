@@ -18,30 +18,53 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-package renderer
+package stack
 
 import (
-	"bytes"
-	"fmt"
-	"io"
-	"strings"
+	"testing"
 
-	"github.com/uber/go-torch/stack"
+	"github.com/stretchr/testify/assert"
 )
 
-// ToFlameInput converts the given profile to flame graph input.
-func ToFlameInput(profile *stack.Profile, sampleIdx int) ([]byte, error) {
-	buf := &bytes.Buffer{}
-	for _, s := range profile.Samples {
-		if err := renderSample(buf, s, sampleIdx); err != nil {
-			return nil, err
-		}
+func TestNewProfile(t *testing.T) {
+	tests := []struct {
+		name    string
+		names   []string
+		wantErr error
+	}{
+		{
+			name:  "valid profile",
+			names: []string{"samples/count", "cpu/nanoseconds"},
+		},
+		{
+			name:    "no samples",
+			names:   nil,
+			wantErr: errProfileMustHaveSamples,
+		},
+		{
+			name:    "sample with empty name",
+			names:   []string{"samples/count", "", "cpu/nanoseconds"},
+			wantErr: errProfileEmptySampleNames,
+		},
 	}
-	return buf.Bytes(), nil
+
+	for _, tt := range tests {
+		profile, err := NewProfile(tt.names)
+		if tt.wantErr != nil {
+			assert.Equal(t, tt.wantErr, err, tt.name)
+			continue
+		}
+		assert.NoError(t, err, tt.names)
+		assert.NotNil(t, profile, "Expected profile for %v", tt.names)
+	}
 }
 
-// renderSample renders a single stack sample as flame graph input.
-func renderSample(w io.Writer, s *stack.Sample, sampleIdx int) error {
-	_, err := fmt.Fprintf(w, "%s %v\n", strings.Join(s.Funcs, ";"), s.Counts[sampleIdx])
-	return err
+func TestSample(t *testing.T) {
+	s := NewSample([]string{"a", "b"}, []int64{1, 2})
+
+	err := s.Add([]int64{3, 4})
+	assert.NoError(t, err)
+
+	err = s.Add([]int64{5})
+	assert.Error(t, err, "should fail when sample counts mismatch")
 }

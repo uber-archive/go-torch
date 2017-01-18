@@ -18,30 +18,57 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-package renderer
+package pprof
 
-import (
-	"bytes"
-	"fmt"
-	"io"
-	"strings"
+import "strconv"
 
-	"github.com/uber/go-torch/stack"
-)
+// SelectSample returns the index of the sample to use given the
+// sample names.
+func SelectSample(args, names []string) int {
+	selected := 0
 
-// ToFlameInput converts the given profile to flame graph input.
-func ToFlameInput(profile *stack.Profile, sampleIdx int) ([]byte, error) {
-	buf := &bytes.Buffer{}
-	for _, s := range profile.Samples {
-		if err := renderSample(buf, s, sampleIdx); err != nil {
-			return nil, err
+	findName := func(needle string) {
+		for i, name := range names {
+			if name == needle {
+				selected = i
+			}
 		}
 	}
-	return buf.Bytes(), nil
+
+	for i, arg := range args {
+		switch arg {
+		case "-inuse_space":
+			findName("inuse_space/bytes")
+		case "-inuse_objects":
+			findName("inuse_objects/count")
+		case "-alloc_space":
+			findName("alloc_space/bytes")
+		case "-alloc_objects":
+			findName("alloc_objects/count")
+		case "-sample_index":
+			// Check if there's another argument after this
+			if i+1 >= len(args) {
+				continue
+			}
+
+			if parsed, ok := parseSampleIndex(args[i+1], names); ok {
+				selected = parsed
+			}
+		}
+	}
+
+	return selected
 }
 
-// renderSample renders a single stack sample as flame graph input.
-func renderSample(w io.Writer, s *stack.Sample, sampleIdx int) error {
-	_, err := fmt.Fprintf(w, "%s %v\n", strings.Join(s.Funcs, ";"), s.Counts[sampleIdx])
-	return err
+func parseSampleIndex(s string, names []string) (int, bool) {
+	parsed, err := strconv.Atoi(s)
+	if err != nil {
+		return 0, false
+	}
+
+	if parsed >= len(names) || parsed < 0 {
+		return 0, false
+	}
+
+	return parsed, true
 }
