@@ -20,9 +20,62 @@
 
 package stack
 
+import (
+	"errors"
+	"fmt"
+)
+
+var (
+	errProfileMustHaveSamples  = errors.New("cannot create a profile with no samples")
+	errProfileEmptySampleNames = errors.New("cannot have empty sample names in profile")
+)
+
+// Profile represents a parsed pprof profile.
+type Profile struct {
+	SampleNames []string
+	Samples     []*Sample
+}
+
 // Sample represents the sample count for a specific call stack.
 type Sample struct {
 	// Funcs is parent first.
-	Funcs []string
-	Count int64
+	Funcs  []string
+	Counts []int64
+}
+
+// NewProfile returns a new profile with the specified sample names.
+func NewProfile(names []string) (*Profile, error) {
+	if len(names) == 0 {
+		return nil, errProfileMustHaveSamples
+	}
+	for _, name := range names {
+		if name == "" {
+			return nil, errProfileEmptySampleNames
+		}
+	}
+	return &Profile{SampleNames: names}, nil
+}
+
+// NewSample returns a new sample with a copy of the counts.
+func NewSample(funcs []string, counts []int64) *Sample {
+	s := &Sample{
+		Funcs:  funcs,
+		Counts: make([]int64, len(counts)),
+	}
+
+	// We create a copy of counts, as we may modify them in Add.
+	s.Add(counts)
+	return s
+}
+
+// Add combines counts with the existing counts for this sample.
+func (s *Sample) Add(counts []int64) error {
+	if len(s.Counts) != len(counts) {
+		return fmt.Errorf("cannot add %v values to sample with %v values", len(counts), len(s.Counts))
+	}
+
+	for i := range s.Counts {
+		s.Counts[i] += counts[i]
+	}
+	return nil
 }

@@ -28,14 +28,18 @@ import (
 )
 
 func TestToFlameInput(t *testing.T) {
-	samples := []*stack.Sample{
-		{Funcs: []string{"func1", "func2"}, Count: 10},
-		{Funcs: []string{"func3"}, Count: 8},
-		{Funcs: []string{"func4", "func5", "func6"}, Count: 3},
+	profile := &stack.Profile{
+		SampleNames: []string{"samples/count"},
+		Samples: []*stack.Sample{
+			{Funcs: []string{"func1", "func2"}, Counts: []int64{10}},
+			{Funcs: []string{"func3"}, Counts: []int64{8}},
+			{Funcs: []string{"func4", "func5", "func6"}, Counts: []int64{3}},
+		},
 	}
+
 	expected := "func1;func2 10\nfunc3 8\nfunc4;func5;func6 3\n"
 
-	out, err := ToFlameInput(samples)
+	out, err := ToFlameInput(profile, 0)
 	if err != nil {
 		t.Fatalf("ToFlameInput failed: %v", err)
 	}

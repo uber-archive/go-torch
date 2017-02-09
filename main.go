@@ -88,12 +88,13 @@ func runWithOptions(allOpts *options, remaining []string) error {
 		return fmt.Errorf("could not get raw output from pprof: %v", err)
 	}
 
-	callStacks, err := pprof.ParseRaw(pprofRawOutput)
+	profile, err := pprof.ParseRaw(pprofRawOutput)
 	if err != nil {
 		return fmt.Errorf("could not parse raw pprof output: %v", err)
 	}
 
-	flameInput, err := renderer.ToFlameInput(callStacks)
+	sampleIndex := pprof.SelectSample(remaining, profile.SampleNames)
+	flameInput, err := renderer.ToFlameInput(profile, sampleIndex)
 	if err != nil {
 		return fmt.Errorf("could not convert stacks to flamegraph input: %v", err)
 	}

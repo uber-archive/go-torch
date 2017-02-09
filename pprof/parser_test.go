@@ -57,7 +57,7 @@ func TestParseMemProfile(t *testing.T) {
 func TestParse(t *testing.T) {
 	_, parser := parseTest1(t)
 
-	assert.Equal(t, []string{"samples/count", "cpu/nanoseconds"}, parser.columns)
+	assert.Equal(t, []string{"samples/count", "cpu/nanoseconds"}, parser.sampleNames)
 
 	// line 7 - 249 are stack records in the test file.
 	const expectedNumRecords = 242
@@ -115,7 +115,7 @@ func TestParseRawValid(t *testing.T) {
 		t.Fatalf("ParseRaw failed: %v", err)
 	}
 
-	if expected := 18; len(got) != expected {
+	if expected := 18; len(got.Samples) != expected {
 		t.Errorf("Expected %v unique stack samples, got %v", expected, got)
 	}
 }
@@ -132,10 +132,13 @@ func TestParseMissingLocation(t *testing.T) {
 		t.Fatalf("Missing location should not cause an error, got %v", err)
 	}
 
-	expected := []*stack.Sample{{
-		Funcs: []string{"missing-function-2", "funcName"},
-		Count: 2,
-	}}
+	expected := &stack.Profile{
+		SampleNames: []string{"samples/count", "cpu/nanoseconds"},
+		Samples: []*stack.Sample{{
+			Funcs:  []string{"missing-function-2", "funcName"},
+			Counts: []int64{2, 10000000},
+		}},
+	}
 	if !reflect.DeepEqual(out, expected) {
 		t.Errorf("Missing function call stack should contain missing-function-2\n  got %+v\n want %+v", expected, out)
 	}
@@ -154,13 +157,29 @@ func TestParseMissingSourceLine(t *testing.T) {
 		t.Fatalf("Missing location should not cause an error, got %v", err)
 	}
 
-	expected := []*stack.Sample{{
-		Funcs: []string{"missing-function-2", "funcName"},
-		Count: 2,
-	}}
+	expected := &stack.Profile{
+		SampleNames: []string{"samples/count", "cpu/nanoseconds"},
+		Samples: []*stack.Sample{{
+			Funcs:  []string{"missing-function-2", "funcName"},
+			Counts: []int64{2, 10000000},
+		}},
+	}
 	if !reflect.DeepEqual(out, expected) {
 		t.Errorf("Missing function call stack should contain missing-function-2\n  got %+v\n want %+v", expected, out)
 	}
+}
+
+func TestParseEmptySampleName(t *testing.T) {
+	contents := `Samples:
+	samples/count  cpu/nanoseconds
+	   2 3  10000000: 1 2
+	Locations:
+	   1: 0xaaaaa funcName :0 s=0
+	   2: 0xaaaab
+`
+	_, err := ParseRaw([]byte(contents))
+	require.Error(t, err, "Should fail to parse profile with no sample name")
+	assert.Contains(t, err.Error(), "empty sample names")
 }
 
 func TestParseSampleCountMismatch(t *testing.T) {
@@ -172,7 +191,7 @@ func TestParseSampleCountMismatch(t *testing.T) {
 `
 	_, err := ParseRaw([]byte(contents))
 	require.Error(t, err, "Expected parseRaw to fail with sample count mismatch")
-	assert.Contains(t, err.Error(), "different sample count (2) than columns (3)")
+	assert.Contains(t, err.Error(), "different sample count (2) than sample names (3)")
 }
 
 func testParseRawBad(t *testing.T, errorReason, errorSubstr, contents string) {

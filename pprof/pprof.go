@@ -33,7 +33,7 @@ import (
 // Options are parameters for pprof.
 type Options struct {
 	BaseURL     string   `short:"u" long:"url" default:"http://localhost:8080" description:"Base URL of your Go program"`
-	URLSuffix   string   `short:"s" long:"suffix" default:"/debug/pprof/profile" description:"URL path of pprof profile"`
+	URLSuffix   string   `long:"suffix" default:"/debug/pprof/profile" description:"URL path of pprof profile"`
 	BinaryFile  string   `short:"b" long:"binaryinput" description:"File path of previously saved binary profile. (binary profile is anything accepted by https://golang.org/cmd/pprof)"`
 	BinaryName  string   `long:"binaryname" description:"File path of the binary that the binaryinput is for, used for pprof inputs"`
 	TimeSeconds int      `short:"t" long:"seconds" default:"30" description:"Number of seconds to profile for"`
