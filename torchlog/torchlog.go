@@ -46,7 +46,7 @@ func getPrefix(level string, color *color.Color) string {
 
 // Fatalf wraps log.Fatalf and adds the current time and color.
 func Fatalf(format string, v ...interface{}) {
-	prefix := getPrefix("FATA", redColor)
+	prefix := getPrefix("FATAL", redColor)
 	log.Fatalf(prefix+format, v...)
 }
 
