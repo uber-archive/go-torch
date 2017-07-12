@@ -162,8 +162,13 @@ func (p *rawParser) toProfile() (*stack.Profile, error) {
 func (p *rawParser) addLocation(line string) {
 	parts := splitBySpace(line)
 	if len(parts) < 4 {
-		// Do not error when there is only id and address in the line.
-		if len(parts) != 2 {
+		switch {
+		case len(parts) == 2:
+			// Some lines just have an ID and an address, we can ignore those.
+		case len(parts) == 3 && strings.HasPrefix(parts[2], "M="):
+			// Some lines have an ID, a mapping ID and an address, we can
+			// ignore those as well.
+		default:
 			p.setError(fmt.Errorf("malformed location line: %v", line))
 		}
 		return

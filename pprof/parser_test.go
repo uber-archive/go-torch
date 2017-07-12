@@ -120,6 +120,23 @@ func TestParseRawValid(t *testing.T) {
 	}
 }
 
+func TestParseLocation(t *testing.T) {
+	contents := `Samples:
+    samples/count cpu/nanoseconds
+    2   10000000: 1 2
+    Locations:
+    1: 0x206f main.fib :0 s=0
+    2: 0x16e1 M=1
+    3: 0x16f4 M=1
+    4: 0x1534 M=1
+    5: 0x207a main.fib :0 s=0
+    `
+	_, err := ParseRaw([]byte(contents))
+	if err != nil {
+		t.Fatalf("Could not parse valid profile, err: %v", err)
+	}
+}
+
 func TestParseMissingLocation(t *testing.T) {
 	contents := `Samples:
 	samples/count cpu/nanoseconds
