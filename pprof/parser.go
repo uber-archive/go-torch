@@ -168,6 +168,10 @@ func (p *rawParser) addLocation(line string) {
 		case len(parts) == 3 && strings.HasPrefix(parts[2], "M="):
 			// Some lines have an ID, a mapping ID and an address, we can
 			// ignore those as well.
+		case len(parts) == 3 && strings.HasPrefix(parts[2], "s="):
+			// See https://github.com/uber/go-torch/issues/63#issuecomment-315658039.
+			// The raw "format" sometimes prints multiple lines per location. We can't
+			// see previous lines here, so for now we just skip them.
 		default:
 			p.setError(fmt.Errorf("malformed location line: %v", line))
 		}
