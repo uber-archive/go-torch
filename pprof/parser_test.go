@@ -122,14 +122,17 @@ func TestParseRawValid(t *testing.T) {
 
 func TestParseLocation(t *testing.T) {
 	contents := `Samples:
-    samples/count cpu/nanoseconds
+samples/count cpu/nanoseconds
     2   10000000: 1 2
-    Locations:
-    1: 0x206f main.fib :0 s=0
-    2: 0x16e1 M=1
-    3: 0x16f4 M=1
-    4: 0x1534 M=1
-    5: 0x207a main.fib :0 s=0
+Locations
+     1: 0x206f main.fib :0 s=0
+     2: 0x16e1 M=1
+     3: 0x16f4 M=1
+     4: 0x1534 M=1
+	 5: 0x207a main.fib :0 s=0
+   730: 0x4021625 runtime.heapBits.next /usr/local/Cellar/go/1.9beta2/libexec/src/runtime/mbitmap.go:464 s=0
+             runtime.scanobject /usr/local/Cellar/go/1.9beta2/libexec/src/runtime/mgcmark.go:1162 s=0
+   731: 0x40473ab runtime.growslice /usr/local/Cellar/go/1.9beta2/libexec/src/runtime/slice.go:140 s=0
     `
 	_, err := ParseRaw([]byte(contents))
 	if err != nil {
