@@ -101,6 +101,19 @@ func runWithOptions(allOpts *options, remaining []string) error {
 
 	opts := allOpts.OutputOpts
 	if opts.Raw {
+		if opts.File != "torch.svg" {
+			torchlog.Print("Printing raw flamegraph input to", opts.File)
+			f, err := os.Create(opts.File)
+			if err != nil {
+				return err
+			}
+			_, err = fmt.Fprintf(f, "%s\n", flameInput)
+			if cerr := f.Close(); err == nil {
+				err = cerr
+			}
+			return err
+		}
+
 		torchlog.Print("Printing raw flamegraph input to stdout")
 		_, err := fmt.Printf("%s\n", flameInput)
 		return err
