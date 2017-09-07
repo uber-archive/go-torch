@@ -128,7 +128,7 @@ func runWithOptions(allOpts *options, remaining []string) error {
 
 func validateOptions(opts *options) error {
 	file := opts.OutputOpts.File
-	if file != "" && !strings.HasSuffix(file, ".svg") {
+	if file != "" && !strings.HasSuffix(file, ".svg") && !opts.OutputOpts.Raw {
 		return fmt.Errorf("output file must end in .svg")
 	}
 	if opts.PProfOptions.TimeSeconds < 1 {
