@@ -101,9 +101,22 @@ func runWithOptions(allOpts *options, remaining []string) error {
 
 	opts := allOpts.OutputOpts
 	if opts.Raw {
+		if opts.File != "torch.svg" {
+			torchlog.Print("Printing raw flamegraph input to", opts.File)
+			f, err := os.Create(opts.File)
+			if err != nil {
+				return err
+			}
+			_, err = fmt.Fprintf(f, "%s\n", flameInput)
+			if cerr := f.Close(); err == nil {
+				err = cerr
+			}
+			return err
+		}
+
 		torchlog.Print("Printing raw flamegraph input to stdout")
-		fmt.Printf("%s\n", flameInput)
-		return nil
+		_, err := fmt.Printf("%s\n", flameInput)
+		return err
 	}
 
 	var flameGraphArgs = buildFlameGraphArgs(opts)
@@ -128,7 +141,7 @@ func runWithOptions(allOpts *options, remaining []string) error {
 
 func validateOptions(opts *options) error {
 	file := opts.OutputOpts.File
-	if file != "" && !strings.HasSuffix(file, ".svg") {
+	if file != "" && !strings.HasSuffix(file, ".svg") && !opts.OutputOpts.Raw {
 		return fmt.Errorf("output file must end in .svg")
 	}
 	if opts.PProfOptions.TimeSeconds < 1 {
