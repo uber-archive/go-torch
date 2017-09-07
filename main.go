@@ -102,8 +102,8 @@ func runWithOptions(allOpts *options, remaining []string) error {
 	opts := allOpts.OutputOpts
 	if opts.Raw {
 		torchlog.Print("Printing raw flamegraph input to stdout")
-		fmt.Printf("%s\n", flameInput)
-		return nil
+		_, err := fmt.Printf("%s\n", flameInput)
+		return err
 	}
 
 	var flameGraphArgs = buildFlameGraphArgs(opts)
