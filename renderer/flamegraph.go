@@ -25,6 +25,7 @@ import (
 	"errors"
 	"os"
 	"os/exec"
+	"runtime"
 )
 
 var errNoPerlScript = errors.New("Cannot find flamegraph scripts in the PATH or current " +
@@ -71,6 +72,10 @@ func GenerateFlameGraph(graphInput []byte, args ...string) ([]byte, error) {
 	flameGraph := findInPath(flameGraphScripts)
 	if flameGraph == "" {
 		return nil, errNoPerlScript
+	}
+
+	if runtime.GOOS == "windows" {
+		return runScript("perl", append([]string{flameGraph}, args...), graphInput)
 	}
 
 	return runScript(flameGraph, args, graphInput)

@@ -23,13 +23,18 @@ package renderer
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 )
 
 const testData = "1 2 3 4 5\n"
 
-func TestFindInPatch(t *testing.T) {
-	const realCmd1 = "ls"
+func TestFindInPath(t *testing.T) {
+	realCmd1 := "ls"
+	if runtime.GOOS == "windows" {
+		realCmd1 = "ls.exe"
+	}
+
 	const realCmd2 = "cat"
 	const fakeCmd1 = "should-not-find-this"
 	const fakeCmd2 = "not-going-to-exist"
@@ -97,6 +102,8 @@ func testScriptFound(t *testing.T, sliceToStub []string, f scriptFn) {
 	defer func() { sliceToStub[0] = origVal }()
 
 	out, err := f([]byte(testData))
+	// NOTE (jkhawaja): assertion fails on Windows (but go-torch still works correctly)
+	// PROBLEM: windows requires first string in command to be "perl" for GenerateFlameGraph
 	if err != nil {
 		t.Fatalf("Failed to run script: %v", err)
 	}
