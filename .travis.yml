@@ -3,9 +3,13 @@ language: go
 
 # 1.4 will probably work, but we don't test it since we use vendor.
 go:
-  - 1.5
-  - 1.6
-  - 1.7
+  - "1.5"
+  - "1.6"
+  - "1.7"
+  - "1.8"
+  - "1.9"
+  - "1.10"
+  - "1.11"
   - tip
 
 install:
