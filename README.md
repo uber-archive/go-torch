@@ -2,7 +2,7 @@
 
 ## go-torch is deprecated, use pprof instead
 
-As of Go 1.10, flamegraph visualizations are available in `go tool pprof` directly!
+As of Go 1.11, flamegraph visualizations are available in `go tool pprof` directly!
 
 ```
 # This will listen on :8081 and open a browser.
@@ -10,7 +10,7 @@ As of Go 1.10, flamegraph visualizations are available in `go tool pprof` direct
 $ go tool pprof -http=":8081" [binary] [profile]
 ```
 
-If you cannot use Go 1.10, you can get the latest `pprof` tool and use it instead:
+If you cannot use Go 1.11, you can get the latest `pprof` tool and use it instead:
 
 ```
 # Get the pprof tool directly
