@@ -174,6 +174,9 @@ func TestRunFile(t *testing.T) {
 		if err != nil {
 			t.Errorf("Failed to read line 1 in output file: %v", err)
 		}
+
+		// NOTE (jkhawaja): assertion fails on Windows (but go-torch still works correctly)
+		// PROBLEM: likely temporary directory access error
 		if !strings.Contains(line1, "flamegraph.pl") {
 			t.Errorf("Output file has not been processed by flame graph scripts")
 		}
