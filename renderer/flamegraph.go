@@ -30,7 +30,10 @@ import (
 var errNoPerlScript = errors.New("Cannot find flamegraph scripts in the PATH or current " +
 	"directory. You can download the script at https://github.com/brendangregg/FlameGraph. " +
 	"These scripts should be added to your PATH or in the directory where go-torch is executed. " +
-	"Alternatively, you can run go-torch with the --raw flag.")
+	"Alternatively, you can run go-torch with the --raw flag." +
+	"Once installed you should have `stackcollapse.pl` and `flamegraph.pl`" +
+	"either with or without the `.pl` suffix, in your $PATH.",
+)
 
 var (
 	stackCollapseScripts = []string{"stackcollapse.pl", "./stackcollapse.pl", "./FlameGraph/stackcollapse.pl"}
